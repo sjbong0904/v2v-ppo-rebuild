@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<connections xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/connections_file.xsd">
+
+    <connection from="S_in" to="N_out"/>
+    <connection from="S_in" to="E_out"/>
+    <connection from="S_in" to="W_out"/>
+
+    <connection from="N_in" to="S_out"/>
+    <connection from="N_in" to="W_out"/>
+    <connection from="N_in" to="E_out"/>
+
+    <connection from="E_in" to="W_out"/>
+    <connection from="E_in" to="S_out"/>
+    <connection from="E_in" to="N_out"/>
+
+    <connection from="W_in" to="E_out"/>
+    <connection from="W_in" to="N_out"/>
+    <connection from="W_in" to="S_out"/>
+
+</connections>

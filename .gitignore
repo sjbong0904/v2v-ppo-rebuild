@@ -1,0 +1,27 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local training/log artifacts
+logs*/
+checkpoints*/
+best_model*/
+*.log
+*.tmp
+
+# TensorBoard output
+**/tb/
+events.out.tfevents*
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+

@@ -1,0 +1,4 @@
+train_model,eval_mode,model,mode,episodes,collision_rate,arrival_rate,near_miss_rate,mean_min_distance,mean_steps,mean_reward,mean_final_aoi,mean_final_pdr,mean_v2v_rx,act_hard_brake_pct,act_brake_pct,act_hold_pct,act_accel_pct,act_full_accel_pct,pdr_scale
+lossy_v2v,perfect_v2v,runs/simple_ppo_lossy_50k_stage3.zip,perfect_v2v,200,0.0,1.0,0.0,22.681859868125294,111.18,75.50197060916481,0.0,0.1310406712568342,0.0,0.0,0.09273250584637524,0.4316873538406188,0.0,0.47558014031300594,0.25
+lossy_v2v,lossy_v2v,runs/simple_ppo_lossy_50k_stage3.zip,lossy_v2v,200,0.025,0.975,0.05,18.51684789062918,107.175,83.92379223615654,0.5775,0.13727675938699743,10.325,0.0,0.24124096104501982,0.16207137858642406,0.0,0.5966876603685561,0.25
+lossy_v2v,sensor_only,runs/simple_ppo_lossy_50k_stage3.zip,sensor_only,200,0.47,0.53,0.695,6.834641386078881,70.845,-18.627024018400988,1.0,0.20008461090634264,0.0,0.0,0.2315618603994636,0.0,0.0,0.7684381396005364,0.25

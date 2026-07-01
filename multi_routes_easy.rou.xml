@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+
+    <vType id="ego_car"
+        accel="3.0" decel="8.0" emergencyDecel="9.0"
+        sigma="0.0" maxSpeed="16.67"
+        length="4.5" minGap="2.5" tau="1.0"
+        color="255,0,0,255" />
+
+    <vType id="background"
+        accel="2.5" decel="4.5" emergencyDecel="7.0"
+        sigma="0.5" maxSpeed="16.67"
+        length="4.5" minGap="2.0" tau="1.0"
+        color="200,200,200,255"
+        impatience="0.8" jmCrossingGap="2.5" />
+
+    <route id="ego_straight" edges="S_in N_out" />
+    <route id="ego_left"     edges="S_in W_out" />
+    <route id="ego_right"    edges="S_in E_out" />
+
+    <route id="r_SN" edges="S_in N_out" />
+    <route id="r_NS" edges="N_in S_out" />
+    <route id="r_EW" edges="E_in W_out" />
+    <route id="r_WE" edges="W_in E_out" />
+
+    <route id="r_NW" edges="N_in W_out" />
+    <route id="r_ES" edges="E_in S_out" />
+
+    <flow id="flow_EW" type="background" route="r_EW" begin="0" end="300" probability="0.06" departSpeed="16.67" />
+    <flow id="flow_WE" type="background" route="r_WE" begin="0" end="300" probability="0.06" departSpeed="16.67" />
+    
+    <flow id="flow_NS" type="background" route="r_NS" begin="0" end="300" probability="0.08" departSpeed="16.67" />
+    <flow id="flow_SN" type="background" route="r_SN" begin="0" end="300" probability="0.06" departSpeed="16.67" />
+
+    <flow id="flow_NW" type="background" route="r_NW" begin="0" end="300" probability="0.04" departSpeed="16.67" />
+    <flow id="flow_ES" type="background" route="r_ES" begin="0" end="300" probability="0.04" departSpeed="16.67" />
+
+</routes>

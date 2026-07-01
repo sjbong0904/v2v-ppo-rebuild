@@ -1,0 +1,5 @@
+train_model,eval_mode,model,mode,episodes,collision_rate,arrival_rate,near_miss_rate,mean_min_distance,mean_steps,mean_reward,act_hard_brake_pct,act_brake_pct,act_hold_pct,act_accel_pct,act_full_accel_pct
+perfect_v2v,perfect_v2v,runs/simple_ppo_50k_v3.zip,perfect_v2v,200,0.0,1.0,0.0,22.231764913745334,110.575,55.81499523099523,0.0,0.3044992086818901,0.0,0.0,0.6955007913181099
+perfect_v2v,sensor_only,runs/simple_ppo_50k_v3.zip,sensor_only,200,0.47,0.53,0.695,6.834641386078881,70.845,-18.627024018400988,0.0,0.2315618603994636,0.0,0.0,0.7684381396005364
+sensor_only,perfect_v2v,runs/simple_ppo_sensor_50k_v3.zip,perfect_v2v,200,0.0,0.0,0.0,53.91064759543075,700.0,-663.6414170993008,0.0,0.9786071428571429,0.0,0.021392857142857144,0.0
+sensor_only,sensor_only,runs/simple_ppo_sensor_50k_v3.zip,sensor_only,200,0.455,0.545,0.69,6.880305347858511,83.43,-13.997515591777693,0.0,0.2630948100203764,0.0,0.7369051899796236,0.0
