@@ -15,48 +15,50 @@ pip install -r v2v_rebuild/requirements.txt
 -r ../aws_requirements.txt
 ```
 
-따라서 새 디렉토리 안에서 별도의 패키지 버전을 고정하지 않는다. 필요한 패키지가
-추가되면 `v2v_rebuild/requirements.txt`가 아니라 상위 `aws_requirements.txt`를
-함께 갱신하는 방식으로 관리한다.
+필요한 패키지가 추가되면 `v2v_rebuild/requirements.txt`가 아니라 상위
+`aws_requirements.txt`를 함께 갱신한다.
 
 ## 현재 사용 중인 주요 패키지
 
-현재 Stage 1-2 코드는 기존 서버 requirements에 포함된 다음 패키지만 사용한다.
+Stage 1–3 (kinematic)은 기존 서버 requirements의 다음 패키지를 사용한다.
 
 - `gymnasium==1.2.3`
 - `stable_baselines3==2.8.0`
 - `numpy==1.26.4`
 - `torch==2.9.1+cpu`
 
+Stage 4 (SUMO)는 추가로 TraCI / SUMO 바이너리가 필요하다.
+
+- `traci`, `sumolib` (보통 eclipse-sumo / SUMO 설치와 함께)
+- 로컬 예: `pip install eclipse-sumo` 후 `SUMO_HOME` 설정
+- 그래프 스크립트: `matplotlib`
+
 ## 의도적인 분리
 
-Stage 1-2에서는 SUMO, TraCI, Mininet, Mininet-WiFi를 import하지 않는다.
+- Stage 1–3: SUMO/TraCI/Mininet을 import하지 않음
+- Stage 4: TraCI-only SUMO, Mininet-WiFi / 기존 `v2x_env_0512.py` 미사용
+- V2V 손실(PDR/AoI)은 코드 안 시뮬레이션
 
 이유:
 
-- 작은 환경에서 보상과 관측 구조를 먼저 검증하기 위해서다.
-- SUMO나 네트워크 스택 문제가 PPO 학습 문제와 섞이지 않게 하기 위해서다.
-- 나중에 SUMO로 옮길 때도 작은 환경 sanity check는 계속 독립적으로 실행할 수
-  있어야 한다.
+- 보상·관측·통신 품질 효과를 PPO 학습 문제와 분리하기 위해서다.
+- kinematic sanity check는 SUMO 없이도 계속 실행 가능해야 한다.
 
 ## 현재 import 경계
 
+Kinematic
+
 - `simple_intersection_env.py`: `gymnasium`, `numpy`
-- `check_env.py`: `simple_intersection_env`
-- `train_simple_ppo.py`: `stable_baselines3`, `simple_intersection_env`
-- `evaluate_simple.py`: `stable_baselines3`, `simple_intersection_env`
-- `compare_models.py`: `evaluate_simple`
+- `train_simple_ppo.py` / `evaluate_simple.py` / `compare_models.py` / `check_env.py`
 
-Stage 4 SUMO 파일은 단순 환경과 분리되어 있다.
+SUMO
 
-- `sumo_intersection_env.py`: `gymnasium`, `numpy`, `traci` (+ SUMO 바이너리)
-- `check_sumo_env.py`: `sumo_intersection_env`
-- Mininet / `v2x_env_0512.py`는 import하지 않는다.
-- V2V 손실(PDR/AoI)은 Stage 3와 같이 코드 안에서 시뮬레이션한다.
+- `sumo_intersection_env.py`: `gymnasium`, `numpy`, `traci`
+- `train_sumo_ppo.py` / `evaluate_sumo.py` / `compare_sumo_models.py` / `check_sumo_env.py`
+- 확장: `sweep_sumo_pdr.py`, `sweep_sumo_weather.py`, `eval_sumo_nlos.py`,
+  `run_sumo_multi_npc.py` 및 대응 `plot_sumo_*.py`
 
 SUMO 바이너리:
 
-- PATH의 `sumo`, 또는 `SUMO_HOME/bin`, 또는 `pip install eclipse-sumo` 패키지를
-  사용한다.
-- 네트워크는 `python sumo_data/build_net.py`로 생성한다.
-
+- PATH의 `sumo`, 또는 `SUMO_HOME/bin`, 또는 `pip install eclipse-sumo`
+- 네트워크: `python sumo_data/build_net.py`

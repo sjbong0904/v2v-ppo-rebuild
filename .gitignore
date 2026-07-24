@@ -1,4 +1,4 @@
-# Python cache
+﻿# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
@@ -25,3 +25,9 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Local-only presentation drafts (do not push)
+v2v_rebuild/PRESENTATION_DRAFT.md
+**/PRESENTATION_DRAFT.md
+
+# Bulky per-episode dumps (keep summary.csv only)
+v2v_rebuild/runs/**/episodes.csv

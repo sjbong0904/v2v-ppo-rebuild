@@ -1,117 +1,128 @@
-# Stage 3 발표용 정리
+# 발표용 정리 (Stage 3 + Stage 4)
 
-이 문서는 Stage 3 결과를 발표 슬라이드에 바로 옮기기 위해 정리한 메모다.
+이 문서는 발표 슬라이드에 바로 옮기기 위한 그림/표/해석 메모다.
 
 ## 핵심 메시지
 
-> V2V 조기 관측은 blind-intersection 상황에서 PPO 에이전트의 사고율을 크게
-> 낮춘다. 또한 V2V 통신 품질이 낮아질수록 수신 메시지 수가 감소하고 AoI가
-> 증가하며, 그 결과 충돌률과 near miss가 함께 증가한다.
+> 교차로 blind-spot에서 센서만으로는 충돌회피 정책 학습이 어렵지만,  
+> V2V 조기 정보로 그 한계를 극복할 수 있다.  
+> 통신 품질이 낮아질수록 수신↓·AoI↑·충돌↑가 함께 나타나며,  
+> 기상·NLOS·중간 다중 장면에서도 V2V 우위가 유지된다.
 
-## 사용하면 좋은 그림
+---
+
+## A. Stage 3 (kinematic) 그림
 
 ### 1. 관측 모드별 안전성 비교
 
-파일:
+- 파일: `presentation/stage3_safety_comparison.png`
+- 말할 내용: sensor는 늦게 인지해 사고/near miss가 높고, perfect·lossy는 조기 관측으로 회피
 
-- `presentation/stage3_safety_comparison.png`
+### 2–5. PDR sweep
 
-슬라이드 제목 예시:
+| 그림 | 파일 |
+| --- | --- |
+| 충돌률 | `presentation/stage3_pdr_collision_rate.png` |
+| near miss | `presentation/stage3_pdr_near_miss_rate.png` |
+| AoI | `presentation/stage3_pdr_aoi.png` |
+| V2V 수신 | `presentation/stage3_pdr_v2v_rx.png` |
 
-- `Sensor-only 대비 V2V 관측의 충돌회피 성능`
+Stage 3 PDR 표:
 
-말할 내용:
+| PDR scale | 충돌률 | near miss | 평균 AoI | 평균 V2V 수신 |
+| ---: | ---: | ---: | ---: | ---: |
+| 1.0 | 0.0% | 0.0% | 0.106 | 46.685 |
+| 0.5 | 0.0% | 0.0% | 0.305 | 23.035 |
+| 0.25 | 2.5% | 5.0% | 0.578 | 10.325 |
+| 0.1 | 17.0% | 33.5% | 1.315 | 3.405 |
 
-- sensor-only는 target 차량을 늦게 인지하기 때문에 사고율과 near miss가 높다.
-- perfect V2V와 lossy V2V는 target 정보를 더 일찍 활용해 충돌을 회피한다.
-- Stage 3 기본 조건에서 lossy V2V도 perfect V2V와 유사한 무사고 성능을 보였다.
+---
 
-### 2. PDR scale에 따른 충돌률 변화
+## B. Stage 4 (SUMO) 그림
 
-파일:
+### 1. SUMO 관측 모드 비교
 
-- `presentation/stage3_pdr_collision_rate.png`
-
-슬라이드 제목 예시:
-
-- `V2V 통신 품질 저하에 따른 충돌률 증가`
-
-말할 내용:
-
-- PDR scale이 1.0 또는 0.5일 때는 충돌률이 0%였다.
-- PDR scale 0.25에서는 충돌률이 2.5%로 증가했다.
-- PDR scale 0.1에서는 충돌률이 17.0%까지 증가했다.
-- 즉, V2V가 있더라도 통신 품질이 낮아지면 안전성이 점진적으로 저하된다.
-
-### 3. PDR scale에 따른 near miss 변화
-
-파일:
-
-- `presentation/stage3_pdr_near_miss_rate.png`
-
-슬라이드 제목 예시:
-
-- `V2V 손실 증가에 따른 near miss 증가`
-
-말할 내용:
-
-- PDR scale 0.1에서는 near miss가 33.5%까지 증가했다.
-- 충돌이 발생하지 않은 episode에서도 안전 여유가 줄어드는 현상을 보여준다.
-
-### 4. PDR scale에 따른 AoI 변화
-
-파일:
-
-- `presentation/stage3_pdr_aoi.png`
-
-슬라이드 제목 예시:
-
-- `메시지 손실과 정보 신선도(AoI)의 관계`
-
-말할 내용:
-
-- PDR scale이 낮아지면 메시지를 덜 받기 때문에 AoI가 증가한다.
-- AoI 증가는 에이전트가 오래된 target 정보를 기반으로 판단할 가능성이 커진다는
-  의미다.
-
-### 5. PDR scale에 따른 V2V 수신 횟수 변화
-
-파일:
-
-- `presentation/stage3_pdr_v2v_rx.png`
-
-슬라이드 제목 예시:
-
-- `PDR 저하에 따른 V2V 메시지 수신 감소`
-
-말할 내용:
-
-- PDR scale 1.0에서는 episode당 평균 46.685회 수신했다.
-- PDR scale 0.1에서는 episode당 평균 3.405회로 감소했다.
-- 수신 횟수 감소가 AoI 증가와 충돌률 증가로 연결된다.
-
-## 발표용 표
-
-### 관측 모드 비교
+- 파일: `presentation/sumo_stage4_safety_comparison.png`
 
 | 조건 | 충돌률 | 도착률 | near miss |
 | --- | ---: | ---: | ---: |
 | perfect V2V | 0.0% | 100.0% | 0.0% |
-| lossy V2V, PDR scale 1.0 | 0.0% | 100.0% | 0.0% |
-| sensor-only | 45.5% | 54.5% | 69.0% |
+| lossy V2V (PDR 1.0) | 0.0% | 100.0% | 0.0% |
+| sensor-only | 35.0% | 65.0% | 60.0% |
 
-### PDR scale sweep
+### 2. SUMO PDR sweep
 
-| PDR scale | 충돌률 | 도착률 | near miss | 평균 AoI | 평균 V2V 수신 |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 1.0 | 0.0% | 100.0% | 0.0% | 0.106 | 46.685 |
-| 0.5 | 0.0% | 100.0% | 0.0% | 0.305 | 23.035 |
-| 0.25 | 2.5% | 97.5% | 5.0% | 0.578 | 10.325 |
-| 0.1 | 17.0% | 83.0% | 33.5% | 1.315 | 3.405 |
+| 그림 | 파일 |
+| --- | --- |
+| 충돌률 | `presentation/sumo_pdr_collision_rate.png` |
+| near miss | `presentation/sumo_pdr_near_miss_rate.png` |
+| AoI | `presentation/sumo_pdr_aoi.png` |
+| V2V 수신 | `presentation/sumo_pdr_v2v_rx.png` |
+
+| PDR scale | 충돌률 | near miss | 평균 AoI | 평균 V2V 수신 |
+| ---: | ---: | ---: | ---: | ---: |
+| 1.0 | 0.0% | 0.0% | 0.098 | 52.85 |
+| 0.5 | 0.0% | 0.0% | 0.280 | 26.12 |
+| 0.25 | 3.0% | 3.0% | 0.725 | 12.17 |
+| 0.1 | 6.0% | 13.0% | 1.156 | 4.68 |
+
+말할 내용:
+
+- 기본 lossy가 0%인 것은 “lossy=perfect”가 아니라, 조기 수신이 충분하면
+  이 난이도에서는 양보가 가능하기 때문이다.
+- PDR을 낮추면 수신↓·AoI↑·충돌↑로 통신 민감도가 드러난다.
+
+### 3. 기상 proxy
+
+- 파일: `presentation/sumo_weather_collision_rate.png`,
+  `presentation/sumo_weather_near_miss_rate.png`
+
+| sensor_range | perfect | lossy | sensor |
+| ---: | ---: | ---: | ---: |
+| 35m | 0% | 0% | 35% |
+| 10m | 0% | 0% | 42% |
+
+### 4. NLOS 폐색
+
+- 파일: `presentation/sumo_nlos_collision_comparison.png`,
+  `presentation/sumo_nlos_visibility.png`
+
+| 모델 | LOS | NLOS |
+| --- | ---: | ---: |
+| perfect / lossy | 0% | 0% |
+| sensor | 35% | 39% |
+
+### 5. 중간 multi-NPC
+
+- 파일: `presentation/sumo_multi_npc_safety.png`
+
+| 모델 | 충돌률 | 도착률 | near miss |
+| --- | ---: | ---: | ---: |
+| perfect | 0.0% | 100.0% | 0.0% |
+| lossy | 0.0% | 100.0% | 0.0% |
+| sensor | 15.0% | 85.0% | 47.0% |
+
+말할 내용:
+
+- 주변차는 rule/고정속도 NPC이며, ego만 학습한다.
+- primary threat(더 급한 TTC)를 관측 슬롯에 매핑해 obs 차원을 유지했다.
+- 완전 다중에이전트 RL은 향후 목표다.
+
+---
+
+## C. 예상 질문 짧은 답
+
+**Q. lossy가 왜 perfect처럼 0%인가?**  
+A. 기본 PDR에서는 조기 수신이 충분하다. PDR을 낮추면 충돌이 올라간다 (SUMO 0.1 → 6%).
+
+**Q. V2V feature가 적지 않나?**  
+A. 이번 주장은 feature 개수가 아니라 정보 시점이다. 같은 6D에서 visibility만
+바꿔도 충돌률이 크게 갈린다.
+
+**Q. 시나리오가 하나뿐인가?**  
+A. 기본 교차 + 기상 + NLOS + 중간 다중으로 센서 실패 모드를 나눴다.
 
 ## 한 문장 결론
 
-> 본 실험은 V2V가 단순한 추가 feature가 아니라, blind-intersection 상황에서
-> PPO 자율주행 에이전트의 안전정책 학습과 충돌회피 성능을 좌우하는 핵심 정보
-> 채널임을 보여준다.
-
+> V2V는 부가 feature가 아니라, blind-intersection에서 PPO 안전정책 학습과
+> 충돌회피를 좌우하는 핵심 정보 채널이다.

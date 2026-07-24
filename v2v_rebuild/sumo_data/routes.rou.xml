@@ -16,5 +16,6 @@
 
     <route id="ego_SN" edges="S_in N_out" />
     <route id="target_EW" edges="E_in W_out" />
+    <route id="npc_WE" edges="W_in E_out" />
 
 </routes>
