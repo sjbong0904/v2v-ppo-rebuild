@@ -127,13 +127,48 @@
 목표:
 
 - 작은 환경에서 검증한 관측/보상 구조를 SUMO 기반 환경으로 옮긴다.
+- 기존 `v2x_env_0512.py`(Mininet, 배경 flow, 31차원 관측)는 재사용하지 않고,
+  Stage 1-3과 동일한 최소 문제만 TraCI로 이식한다.
+
+환경:
+
+- `sumo_data/`: ego `S_in → N_out`, target `E_in → W_out` 십자 교차로
+- `sumo_intersection_env.py`: Discrete(5), 6차원 관측, 보상은 Stage 3와 동일 계열
+- 관측 모드: `perfect_v2v`, `sensor_only`, `lossy_v2v` (PDR/AoI는 시뮬, Mininet 없음)
+- ego/target 모두 SpeedMode=0으로 SUMO 양보를 끄고 속도를 직접 제어
 
 완료 기준:
 
-- SUMO에서도 동일한 ablation study를 수행한다.
-- 비교 조건은 다음 세 가지로 둔다.
-  - sensor-only
-  - perfect V2V
-  - lossy V2V
+- rule-based 정책이 perfect V2V에서 거의 무사고로 통과해야 한다.
+- hold/full 고정 정책은 충분히 위험해야 한다.
+- SUMO에서도 sensor-only / perfect V2V / lossy V2V ablation이 가능해야 한다.
 - 최종 발표에서 V2V가 성능 향상에 필수적이었다는 점을 수치로 설명할 수
   있어야 한다.
+
+진행 결과 (1차 sanity check):
+
+- `python sumo_data/build_net.py`로 `map.net.xml` 생성
+- `runs/sumo_baseline/summary.csv` (50 episode)
+  - `perfect_v2v` + rule: 충돌률 0%, 도착률 100%
+  - `perfect_v2v` + hold: 충돌률 16%, full: 충돌률 38%
+  - `sensor_only` + rule: 충돌률 4%, near miss 16%
+  - `lossy_v2v` + rule: 충돌률 0%, 도착률 100%
+
+진행 결과 (2차 PPO):
+
+- 모델: `runs/sumo_ppo_50k_{perfect,sensor,lossy}.zip` (각 5만 step)
+- 비교: `runs/sumo_stage4_3x3_comparison.csv` (100 episode)
+  - perfect 학습 + perfect 평가: 충돌률 0%, 도착률 100%
+  - lossy 학습 + lossy 평가: 충돌률 0%, 도착률 100%
+  - sensor 학습 + sensor 평가: 충돌률 35%, 도착률 65%, near miss 60%
+  - perfect 학습 + sensor 평가: 충돌률 40%
+
+해석:
+
+- SUMO에서도 V2V 조기 관측이 안전정책 학습에 필수적이다.
+- Stage 3 kinematic 결과와 같은 방향의 재현되었다.
+
+다음:
+
+- 필요 시 SUMO PDR sweep / seed 반복
+- 여유 시 AoI 관측 벡터 실험

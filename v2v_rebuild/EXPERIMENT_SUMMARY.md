@@ -180,18 +180,45 @@ PDR scale sweep:
 > 향상시킨다. 또한 통신 품질이 낮아질수록 성능이 점진적으로 저하되어, PDR/AoI가
 > 자율주행 안전성에 영향을 주는 요소임을 확인할 수 있다.
 
-## 다음 실험
-
-다음 단계는 Stage 3 결과를 더 정교하게 만든 뒤 Stage 4로 넘어가는 것이다.
-
-추가할 내용:
-
-- PDR scale별 그래프 생성
-- 여러 seed 반복 평가
-- AoI를 관측 벡터에 포함할지 검토
-- SUMO 이식용 환경 설계
+## Stage 4 결과 (SUMO)
 
 목표:
 
-- 실험 결과를 발표용 그림과 표로 정리한다.
-- 이후 SUMO 환경으로 보상/관측 구조를 이식한다.
+- Stage 3에서 검증한 관측/보상/V2V 모드를 TraCI-only SUMO 최소 교차로로 이식한다.
+- Mininet과 기존 31차원 환경은 사용하지 않는다.
+
+환경:
+
+- `sumo_intersection_env.py` + `sumo_data/`
+- ego: `S_in → N_out`, target: `E_in → W_out`
+- 관측/행동/보상은 Stage 3와 동일 계열
+
+Sanity check (`runs/sumo_baseline`, 50 episode):
+
+| 관측 모드 | 정책 | 충돌률 | 도착률 |
+| --- | --- | ---: | ---: |
+| perfect_v2v | rule | 0.0% | 100.0% |
+| perfect_v2v | hold | 16.0% | 84.0% |
+| perfect_v2v | full | 38.0% | 62.0% |
+| sensor_only | rule | 4.0% | 96.0% |
+
+PPO 3x3 (`runs/sumo_stage4_3x3_comparison.csv`, 100 episode):
+
+| 학습 모드 | 평가 모드 | 충돌률 | 도착률 | near miss |
+| --- | --- | ---: | ---: | ---: |
+| perfect_v2v | perfect_v2v | 0.0% | 100.0% | 0.0% |
+| lossy_v2v | lossy_v2v | 0.0% | 100.0% | 0.0% |
+| sensor_only | sensor_only | 35.0% | 65.0% | 60.0% |
+| perfect_v2v | sensor_only | 40.0% | 60.0% | 62.0% |
+
+해석:
+
+- SUMO에서도 V2V 조기 관측 모델은 무사고 통과가 가능하다.
+- sensor-only는 같은 5만 step PPO로도 충돌률 35%가 남는다.
+- Stage 3 kinematic 결론이 SUMO에서도 같은 방향으로 재현되었다.
+
+## 다음 실험
+
+- SUMO PDR scale sweep
+- 여러 seed 반복 평가
+- AoI를 관측 벡터에 포함할지 검토

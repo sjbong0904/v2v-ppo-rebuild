@@ -14,32 +14,35 @@
 
 ## 현재 단계
 
-현재는 Stage 3까지 진행했다.
+현재는 Stage 4(SUMO 최소 이식 + PPO)까지 진행했다.
 
-- Stage 1: 단순 교차로 환경에서 PPO가 안전하게 충돌을 회피하고 통과할 수
-  있는지 확인했다.
-- Stage 2: `perfect_v2v`와 `sensor_only` 관측 모드를 각각 학습/평가하여
-  V2V 조기 관측의 필요성을 비교했다.
-- Stage 3: `lossy_v2v` 관측 모드를 추가하고, PDR scale에 따른 성능 저하를
-  확인했다.
+- Stage 1-3: 단순 kinematic 환경에서 V2V / sensor-only / lossy V2V를 검증했다.
+- Stage 4: 동일 관측·보상·행동 공간을 TraCI-only SUMO 교차로로 옮기고,
+  3모드 PPO 학습·비교까지 완료했다. Mininet은 사용하지 않는다.
 
-핵심 결과는 다음과 같다.
+Stage 3 핵심 결과:
 
-- `perfect_v2v` 학습 및 평가: 충돌률 0%, 도착률 100%
-- `sensor_only` 학습 및 평가: 충돌률 45.5%, 도착률 54.5%
-- `lossy_v2v` 학습 및 평가: 기본 PDR scale 1.0에서 충돌률 0%, 도착률 100%
-- PDR scale 0.1에서는 `lossy_v2v` 충돌률이 17.0%까지 증가했다.
+- `perfect_v2v`: 충돌률 0%, 도착률 100%
+- `sensor_only`: 충돌률 45.5%, 도착률 54.5%
+- `lossy_v2v` (PDR 1.0): 충돌률 0%; PDR 0.1에서는 충돌률 17.0%
 
-즉, 현재 단순 blind-intersection 환경에서는 V2V 조기 관측이 단순한 부가
-feature가 아니라 안전정책 학습에 직접적인 영향을 주는 것으로 나타났다.
+Stage 4 SUMO PPO (`runs/sumo_stage4_3x3_comparison.csv`, 100 episode):
+
+- perfect 학습·평가: 충돌률 0%, 도착률 100%
+- lossy 학습·평가: 충돌률 0%, 도착률 100%
+- sensor 학습·평가: 충돌률 35%, 도착률 65%
 
 ## 파일 구성
 
-- `simple_intersection_env.py`: 단순 교차로 Gymnasium 환경
-- `check_env.py`: 랜덤/고정/rule-based 정책 sanity check
-- `train_simple_ppo.py`: PPO 학습 스크립트
-- `evaluate_simple.py`: 단일 모델 평가 스크립트
-- `compare_models.py`: 여러 모델을 관측 모드별로 비교하는 스크립트
+- `simple_intersection_env.py`: 단순 교차로 Gymnasium 환경 (Stage 1-3)
+- `sumo_intersection_env.py`: SUMO/TraCI 최소 교차로 환경 (Stage 4)
+- `sumo_data/`: SUMO 네트워크·라우트·sumocfg (`build_net.py`로 net 생성)
+- `check_env.py`: kinematic 환경 sanity check
+- `check_sumo_env.py`: SUMO 환경 sanity check
+- `train_simple_ppo.py`: kinematic PPO 학습
+- `train_sumo_ppo.py`: SUMO PPO 학습
+- `evaluate_simple.py` / `evaluate_sumo.py`: 단일 모델 평가
+- `compare_models.py` / `compare_sumo_models.py`: 관측 모드별 비교
 - `ROADMAP.md`: 단계별 진행 계획과 완료 기준
 - `EXPERIMENT_SUMMARY.md`: 지금까지의 실험 결과 요약
 - `PRESENTATION_NOTES.md`: Stage 3 발표용 그림/표/해석 메모
@@ -72,12 +75,43 @@ python compare_models.py `
   --out runs/stage2_2x2_comparison.csv
 ```
 
+## SUMO 선행조건 (Stage 4)
+
+1. SUMO 바이너리가 필요하다. 로컬에서는 예를 들어:
+
+```powershell
+pip install eclipse-sumo
+$env:SUMO_HOME = (python -c "import sumo; print(sumo.SUMO_HOME)")
+```
+
+2. 네트워크 빌드:
+
+```powershell
+python sumo_data/build_net.py
+```
+
+3. sanity check:
+
+```powershell
+python check_sumo_env.py --episodes 50 --out-dir runs/sumo_baseline
+```
+
+4. SUMO PPO 학습 및 3x3 비교:
+
+```powershell
+python train_sumo_ppo.py --timesteps 50000 --mode perfect_v2v --out runs/sumo_ppo_50k_perfect.zip
+python train_sumo_ppo.py --timesteps 50000 --mode sensor_only --out runs/sumo_ppo_50k_sensor.zip
+python train_sumo_ppo.py --timesteps 50000 --mode lossy_v2v --out runs/sumo_ppo_50k_lossy.zip
+
+python compare_sumo_models.py `
+  --model perfect_v2v runs/sumo_ppo_50k_perfect.zip `
+  --model sensor_only runs/sumo_ppo_50k_sensor.zip `
+  --model lossy_v2v runs/sumo_ppo_50k_lossy.zip `
+  --episodes 100 `
+  --out runs/sumo_stage4_3x3_comparison.csv
+```
+
 ## 다음 목표
 
-다음 단계는 Stage 3 결과를 그래프/반복 seed로 더 다듬고, 이후 SUMO 이식을
-준비하는 것이다.
-
-- PDR scale별 성능 그래프 생성
-- 여러 seed 반복 평가
-- AoI를 관측에 포함하는 확장 실험
-- SUMO 환경 이식 설계
+- 필요 시 SUMO PDR sweep / 여러 seed 반복 평가
+- 여유 시 AoI 관측 확장

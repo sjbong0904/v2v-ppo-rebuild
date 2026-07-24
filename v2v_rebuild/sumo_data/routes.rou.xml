@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+
+    <vType id="ego_car"
+        accel="4.0" decel="8.0" emergencyDecel="9.0"
+        sigma="0.0" maxSpeed="16.0"
+        length="4.5" minGap="2.5" tau="1.0"
+        color="255,0,0,255" />
+
+    <vType id="target_car"
+        accel="3.0" decel="4.5" emergencyDecel="7.0"
+        sigma="0.0" maxSpeed="16.0"
+        length="4.5" minGap="2.0" tau="1.0"
+        color="0,0,255,255" />
+
+    <route id="ego_SN" edges="S_in N_out" />
+    <route id="target_EW" edges="E_in W_out" />
+
+</routes>
