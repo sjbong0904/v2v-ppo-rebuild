@@ -25,6 +25,12 @@ V2V_MAX_RANGE = 120.0
 AOI_TIMEOUT = 1.0
 EGO_ID = "ego"
 TARGET_ID = "target"
+NPC_WE_ID = "npc_we"
+
+# Virtual NLOS occluder in the SE quadrant (building / parked truck proxy).
+# Sensor LOS from ego(S->N) to target(E->W) is blocked while the ray hits this box.
+# V2V is unaffected (NLOS communication).
+NLOS_BLOCKER_AABB = (12.0, -40.0, 45.0, -6.0)  # xmin, ymin, xmax, ymax
 
 ACTION_ACCEL = {
     0: -8.0,
@@ -106,6 +112,8 @@ class SumoIntersectionEnv(gym.Env):
         observation_mode: str = "perfect_v2v",
         sensor_range: float = 35.0,
         pdr_scale: float = 1.0,
+        nlos_blocker: bool = False,
+        multi_npc: bool = False,
         seed: int | None = None,
         sumo_binary: str = "sumo",
         config_file: str = DEFAULT_SUMOCFG,
@@ -120,6 +128,10 @@ class SumoIntersectionEnv(gym.Env):
         self.observation_mode = observation_mode
         self.sensor_range = sensor_range
         self.pdr_scale = pdr_scale
+        self.nlos_blocker = nlos_blocker
+        self.multi_npc = multi_npc
+        self.primary_threat_id = TARGET_ID
+        self.npc_speed = TARGET_SPEED
         self.rng = np.random.default_rng(seed)
         self.sumo_binary = find_sumo_binary(sumo_binary)
         self.config_file = os.path.abspath(config_file)
@@ -183,7 +195,9 @@ class SumoIntersectionEnv(gym.Env):
         traci.vehicle.setSpeed(EGO_ID, self.ego_speed)
 
         if TARGET_ID in traci.vehicle.getIDList():
-            traci.vehicle.setSpeed(TARGET_ID, self.target_speed)
+            traci.vehicle.setSpeed(TARGET_ID, self._scenario.target_speed)
+        if self.multi_npc and NPC_WE_ID in traci.vehicle.getIDList():
+            traci.vehicle.setSpeed(NPC_WE_ID, self.npc_speed)
 
         traci.simulationStep()
         self.steps += 1
@@ -196,11 +210,7 @@ class SumoIntersectionEnv(gym.Env):
             self.near_miss = True
 
         colliding = set(traci.simulation.getCollidingVehiclesIDList())
-        collision = (
-            distance <= COLLISION_RADIUS
-            or EGO_ID in colliding
-            or TARGET_ID in colliding
-        )
+        collision = distance <= COLLISION_RADIUS or EGO_ID in colliding
         arrived = self.ego_y >= EGO_GOAL_Y or EGO_ID not in traci.vehicle.getIDList()
         if collision:
             arrived = False
@@ -217,6 +227,9 @@ class SumoIntersectionEnv(gym.Env):
             "min_distance": self.min_distance,
             "ttc": self._ttc_to_conflict(),
             "visible": self._target_visible(),
+            "sensor_visible": self._sensor_visible(),
+            "occluded": self._is_occluded(),
+            "primary_threat": self.primary_threat_id,
             "aoi": self.bsm_aoi,
             "pdr": self._calc_pdr(),
             "v2v_rx_count": self.v2v_rx_count,
@@ -242,11 +255,13 @@ class SumoIntersectionEnv(gym.Env):
         super().close()
 
     def _sample_scenario(self) -> Scenario:
-        return Scenario(
+        scenario = Scenario(
             ego_speed=float(self.rng.uniform(10.0, 14.0)),
             target_speed=float(self.rng.uniform(9.0, 13.5)),
             target_start_offset=float(self.rng.uniform(55.0, 75.0)),
         )
+        self.npc_speed = float(self.rng.uniform(9.0, 13.0))
+        return scenario
 
     def _start_sumo(self) -> None:
         if not os.path.isfile(self.config_file):
@@ -300,18 +315,36 @@ class SumoIntersectionEnv(gym.Env):
             departPos=str(target_pos),
             departSpeed=str(scenario.target_speed),
         )
+        if self.multi_npc:
+            w_in_len = traci.lane.getLength("W_in_0")
+            # Approach from the west; offset slightly different from target for asynchrony.
+            npc_offset = float(self.rng.uniform(50.0, 80.0))
+            npc_pos = max(0.1, w_in_len - npc_offset)
+            traci.vehicle.add(
+                NPC_WE_ID,
+                "npc_WE",
+                typeID="target_car",
+                depart="now",
+                departLane="0",
+                departPos=str(npc_pos),
+                departSpeed=str(self.npc_speed),
+            )
         traci.simulationStep()
 
-        for vid, speed in (
+        controlled = [
             (EGO_ID, scenario.ego_speed),
             (TARGET_ID, scenario.target_speed),
-        ):
+        ]
+        if self.multi_npc:
+            controlled.append((NPC_WE_ID, self.npc_speed))
+        for vid, speed in controlled:
             if vid in traci.vehicle.getIDList():
                 traci.vehicle.setSpeedMode(vid, 0)
                 traci.vehicle.setSpeed(vid, speed)
 
         self.ego_speed = scenario.ego_speed
         self.target_speed = scenario.target_speed
+        self.primary_threat_id = TARGET_ID
 
     def _close_traci(self) -> None:
         if self.traci_started:
@@ -323,15 +356,34 @@ class SumoIntersectionEnv(gym.Env):
 
     def _sync_kinematics(self) -> None:
         if EGO_ID in traci.vehicle.getIDList():
-            x, y = traci.vehicle.getPosition(EGO_ID)
+            _, y = traci.vehicle.getPosition(EGO_ID)
             self.ego_y = float(y)
             self.ego_speed = float(traci.vehicle.getSpeed(EGO_ID))
+
+        candidates: list[tuple[str, float, float, float]] = []
+        # (vid, approach_dist, speed, ttc)
         if TARGET_ID in traci.vehicle.getIDList():
-            x, y = traci.vehicle.getPosition(TARGET_ID)
-            self.target_x = float(x)
-            self.target_speed = float(traci.vehicle.getSpeed(TARGET_ID))
-        elif self.target_x > -50.0:
-            # Keep last known target state if it left the network past junction.
+            x, _ = traci.vehicle.getPosition(TARGET_ID)
+            speed = max(float(traci.vehicle.getSpeed(TARGET_ID)), 0.1)
+            # East->West: positive x means still approaching junction.
+            approach = float(x)
+            if approach > 0.0:
+                candidates.append((TARGET_ID, approach, speed, approach / speed))
+        if self.multi_npc and NPC_WE_ID in traci.vehicle.getIDList():
+            x, _ = traci.vehicle.getPosition(NPC_WE_ID)
+            speed = max(float(traci.vehicle.getSpeed(NPC_WE_ID)), 0.1)
+            # West->East: negative x means still approaching junction.
+            approach = float(-x)
+            if approach > 0.0:
+                candidates.append((NPC_WE_ID, approach, speed, approach / speed))
+
+        if candidates:
+            vid, approach, speed, _ = min(candidates, key=lambda c: c[3])
+            self.primary_threat_id = vid
+            self.target_x = approach
+            self.target_speed = speed
+        else:
+            self.primary_threat_id = TARGET_ID
             self.target_x = min(self.target_x, -COLLISION_RADIUS - 1.0)
 
     def _target_visible(self) -> bool:
@@ -342,7 +394,26 @@ class SumoIntersectionEnv(gym.Env):
         return self._sensor_visible()
 
     def _sensor_visible(self) -> bool:
-        return self._distance_to_target() <= self.sensor_range
+        if self._distance_to_target() > self.sensor_range:
+            return False
+        if self.nlos_blocker and self._is_occluded():
+            return False
+        return True
+
+    def _is_occluded(self) -> bool:
+        """Return True if ego-threat LOS intersects the NLOS blocker AABB."""
+        if not self.nlos_blocker:
+            return False
+        threat = self.primary_threat_id
+        if EGO_ID in traci.vehicle.getIDList() and threat in traci.vehicle.getIDList():
+            ex, ey = traci.vehicle.getPosition(EGO_ID)
+            tx, ty = traci.vehicle.getPosition(threat)
+        else:
+            ex, ey = 0.0, self.ego_y
+            tx, ty = self.target_x, 0.0
+        return _segment_intersects_aabb(
+            float(ex), float(ey), float(tx), float(ty), NLOS_BLOCKER_AABB
+        )
 
     def _fresh_bsm_available(self) -> bool:
         return self.last_bsm is not None and self.bsm_aoi <= AOI_TIMEOUT
@@ -373,9 +444,10 @@ class SumoIntersectionEnv(gym.Env):
             self.v2v_rx_count += 1
 
     def _distance_to_target(self) -> float:
-        if TARGET_ID in traci.vehicle.getIDList() and EGO_ID in traci.vehicle.getIDList():
+        threat = self.primary_threat_id
+        if threat in traci.vehicle.getIDList() and EGO_ID in traci.vehicle.getIDList():
             ex, ey = traci.vehicle.getPosition(EGO_ID)
-            tx, ty = traci.vehicle.getPosition(TARGET_ID)
+            tx, ty = traci.vehicle.getPosition(threat)
             return float(np.hypot(tx - ex, ty - ey))
         return float(np.hypot(self.target_x, 0.0 - self.ego_y))
 
@@ -486,7 +558,38 @@ class SumoIntersectionEnv(gym.Env):
             "min_distance": self.min_distance,
             "ttc": self._ttc_to_conflict(),
             "visible": self._target_visible(),
+            "sensor_visible": self._sensor_visible(),
+            "occluded": self._is_occluded(),
             "aoi": self.bsm_aoi,
             "pdr": self._calc_pdr(),
             "v2v_rx_count": self.v2v_rx_count,
         }
+
+
+def _segment_intersects_aabb(
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    aabb: tuple[float, float, float, float],
+) -> bool:
+    """Liang-Barsky style segment vs axis-aligned box test."""
+    xmin, ymin, xmax, ymax = aabb
+    dx = x2 - x1
+    dy = y2 - y1
+    p = [-dx, dx, -dy, dy]
+    q = [x1 - xmin, xmax - x1, y1 - ymin, ymax - y1]
+    u1, u2 = 0.0, 1.0
+    for pi, qi in zip(p, q):
+        if abs(pi) < 1e-12:
+            if qi < 0:
+                return False
+            continue
+        t = qi / pi
+        if pi < 0:
+            u1 = max(u1, t)
+        else:
+            u2 = min(u2, t)
+        if u1 > u2:
+            return False
+    return True

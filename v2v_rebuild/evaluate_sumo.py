@@ -14,8 +14,18 @@ def evaluate(
     mode: str,
     episodes: int,
     pdr_scale: float = 1.0,
+    sensor_range: float = 35.0,
+    nlos_blocker: bool = False,
+    multi_npc: bool = False,
 ) -> dict[str, float | int | str]:
-    env = SumoIntersectionEnv(observation_mode=mode, pdr_scale=pdr_scale, seed=123)
+    env = SumoIntersectionEnv(
+        observation_mode=mode,
+        pdr_scale=pdr_scale,
+        sensor_range=sensor_range,
+        nlos_blocker=nlos_blocker,
+        multi_npc=multi_npc,
+        seed=123,
+    )
     model = PPO.load(model_path) if model_path else None
 
     collisions = 0
@@ -29,6 +39,8 @@ def evaluate(
     aoi_values: list[float] = []
     pdr_values: list[float] = []
     v2v_rx_total = 0
+    occluded_steps = 0
+    sensor_visible_steps = 0
 
     try:
         for ep in range(episodes):
@@ -47,6 +59,8 @@ def evaluate(
                 obs, reward, terminated, truncated, info = env.step(int(action))
                 ep_reward += reward
                 steps += 1
+                occluded_steps += int(info.get("occluded", False))
+                sensor_visible_steps += int(info.get("sensor_visible", False))
                 done = terminated or truncated
 
             collisions += int(info.get("collision", False))
@@ -65,6 +79,10 @@ def evaluate(
         "model": model_path or "rule",
         "mode": mode,
         "episodes": episodes,
+        "sensor_range": sensor_range,
+        "pdr_scale": pdr_scale,
+        "nlos_blocker": int(nlos_blocker),
+        "multi_npc": int(multi_npc),
         "collision_rate": collisions / episodes,
         "arrival_rate": arrivals / episodes,
         "near_miss_rate": near_misses / episodes,
@@ -74,6 +92,8 @@ def evaluate(
         "mean_final_aoi": sum(aoi_values) / len(aoi_values),
         "mean_final_pdr": sum(pdr_values) / len(pdr_values),
         "mean_v2v_rx": v2v_rx_total / episodes,
+        "occluded_step_frac": occluded_steps / max(total_steps, 1),
+        "sensor_visible_step_frac": sensor_visible_steps / max(total_steps, 1),
         "act_hard_brake_pct": action_counts[0] / max(total_steps, 1),
         "act_brake_pct": action_counts[1] / max(total_steps, 1),
         "act_hold_pct": action_counts[2] / max(total_steps, 1),
@@ -98,9 +118,20 @@ def main():
     )
     parser.add_argument("--episodes", type=int, default=100)
     parser.add_argument("--pdr-scale", type=float, default=1.0)
+    parser.add_argument("--sensor-range", type=float, default=35.0)
+    parser.add_argument("--nlos-blocker", action="store_true")
+    parser.add_argument("--multi-npc", action="store_true")
     parser.add_argument("--csv", default=None)
     args = parser.parse_args()
-    result = evaluate(args.model, args.mode, args.episodes, args.pdr_scale)
+    result = evaluate(
+        args.model,
+        args.mode,
+        args.episodes,
+        pdr_scale=args.pdr_scale,
+        sensor_range=args.sensor_range,
+        nlos_blocker=args.nlos_blocker,
+        multi_npc=args.multi_npc,
+    )
     if args.csv:
         os.makedirs(os.path.dirname(args.csv) or ".", exist_ok=True)
         with open(args.csv, "w", newline="", encoding="utf-8") as f:

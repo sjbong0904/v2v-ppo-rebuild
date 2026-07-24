@@ -1,2 +1,0 @@
-model,mode,episodes,collision_rate,arrival_rate,near_miss_rate,mean_min_distance,mean_steps,mean_reward,act_hard_brake_pct,act_brake_pct,act_hold_pct,act_accel_pct,act_full_accel_pct
-runs/simple_ppo_50k_v2.zip,perfect_v2v,200,0.0,0.0,0.0,61.862962775630265,700.0,-676.7746907952643,0.0,1.0,0.0,0.0,0.0

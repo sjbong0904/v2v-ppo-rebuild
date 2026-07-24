@@ -168,7 +168,51 @@
 - SUMO에서도 V2V 조기 관측이 안전정책 학습에 필수적이다.
 - Stage 3 kinematic 결과와 같은 방향의 재현되었다.
 
-다음:
+진행 결과 (3차 PDR sweep):
 
-- 필요 시 SUMO PDR sweep / seed 반복
-- 여유 시 AoI 관측 벡터 실험
+- `runs/sumo_pdr_sweep_summary.csv`, 그림 `presentation/sumo_pdr_*.png`
+  - PDR 1.0: 충돌 0%, V2V 수신 52.9
+  - PDR 0.5: 충돌 0%, V2V 수신 26.1
+  - PDR 0.25: 충돌 3%, V2V 수신 12.2
+  - PDR 0.1: 충돌 6%, V2V 수신 4.7
+- Stage 3와 같이 PDR↓ → 수신↓ → AoI↑ → 충돌↑ 패턴이 SUMO에서도 재현됨
+
+진행 결과 (4차 기상·NLOS):
+
+- 기상 proxy (`runs/sumo_weather_sensor_range_sweep.csv`)
+  - perfect/lossy: sensor_range 10~35m 모두 충돌 0%
+  - sensor-only: 35m 35% → 10m 42% (사거리 축소 시 악화)
+- NLOS (`runs/sumo_nlos_comparison.csv`)
+  - perfect/lossy + blocker: 충돌 0%
+  - sensor-only: LOS 35% → NLOS 39%
+  - occluded step fraction ~42–58%
+
+진행 결과 (5차 중간 multi-NPC):
+
+- ego(학습) + target(E→W) + npc(W→E, rule 고정속도)
+- primary threat = 충돌점 도착 TTC가 더 급한 차량
+- `runs/sumo_multi_npc_comparison.csv`
+  - perfect: 충돌 0%, 도착 100%
+  - lossy: 충돌 0%, 도착 100%
+  - sensor: 충돌 15%, 도착 85%
+
+Stage 4 종합 해석:
+
+- kinematic에서 검증한 “V2V가 센서 한계를 보완한다”는 주장이 SUMO에서도 재현된다.
+- 기본 lossy(`pdr_scale=1.0`)는 이 난이도에서 perfect에 가까운 안전성을 보이지만,
+  PDR을 낮추면 충돌률이 상승해 통신 품질 민감도가 확인된다.
+- 기상·NLOS·중간 다중 장면으로 센서 실패 모드를 넓혀도 V2V 우위가 유지된다.
+- 완전 다중에이전트 RL(상대도 학습)은 향후 궁극 목표로 분리한다.
+
+## Stage 5 (향후): 완전 다중에이전트 RL
+
+목표 후보:
+
+- 주변 차량도 학습 정책으로 두어 non-stationary multi-agent로 확장
+- V2V를 통한 협력/양보 학습
+
+전제:
+
+- Stage 4까지의 단일 ego + rule NPC 중간 단계가 안정적일 것
+- 관측/보상/통신 ablation을 유지한 채 에이전트 수만 늘릴 것
+

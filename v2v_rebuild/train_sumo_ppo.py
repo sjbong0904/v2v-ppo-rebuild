@@ -22,6 +22,9 @@ def main():
         choices=["perfect_v2v", "lossy_v2v", "sensor_only"],
     )
     parser.add_argument("--pdr-scale", type=float, default=1.0)
+    parser.add_argument("--sensor-range", type=float, default=35.0)
+    parser.add_argument("--nlos-blocker", action="store_true")
+    parser.add_argument("--multi-npc", action="store_true")
     parser.add_argument("--out", default=MODEL_PATH)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--tensorboard", action="store_true")
@@ -33,6 +36,9 @@ def main():
     raw_env = SumoIntersectionEnv(
         observation_mode=args.mode,
         pdr_scale=args.pdr_scale,
+        sensor_range=args.sensor_range,
+        nlos_blocker=args.nlos_blocker,
+        multi_npc=args.multi_npc,
         seed=args.seed,
     )
     env = Monitor(raw_env)
