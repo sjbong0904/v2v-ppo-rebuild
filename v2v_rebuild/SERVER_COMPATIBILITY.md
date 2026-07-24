@@ -47,6 +47,16 @@ Stage 1-2에서는 SUMO, TraCI, Mininet, Mininet-WiFi를 import하지 않는다.
 - `evaluate_simple.py`: `stable_baselines3`, `simple_intersection_env`
 - `compare_models.py`: `evaluate_simple`
 
-SUMO 환경을 다시 도입할 때는 별도 파일로 분리한다. 예를 들어
-`sumo_v2v_env.py`처럼 만들고, 기존 단순 환경 파일을 덮어쓰지 않는다.
+Stage 4 SUMO 파일은 단순 환경과 분리되어 있다.
+
+- `sumo_intersection_env.py`: `gymnasium`, `numpy`, `traci` (+ SUMO 바이너리)
+- `check_sumo_env.py`: `sumo_intersection_env`
+- Mininet / `v2x_env_0512.py`는 import하지 않는다.
+- V2V 손실(PDR/AoI)은 Stage 3와 같이 코드 안에서 시뮬레이션한다.
+
+SUMO 바이너리:
+
+- PATH의 `sumo`, 또는 `SUMO_HOME/bin`, 또는 `pip install eclipse-sumo` 패키지를
+  사용한다.
+- 네트워크는 `python sumo_data/build_net.py`로 생성한다.
 
