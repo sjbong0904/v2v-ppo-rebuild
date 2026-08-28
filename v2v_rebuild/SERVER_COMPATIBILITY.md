@@ -1,7 +1,7 @@
 # 서버 환경 호환성 메모
 
-이 재구성 디렉토리는 기존 AWS 서버 환경과 충돌하지 않도록 상위
-`aws_requirements.txt`를 그대로 사용한다.
+이 재구성 디렉토리는 기존 AWS/Mininet 프로젝트와 의존성을 분리한다.
+`requirements.txt`에는 현재 실험에 필요한 패키지만 둔다.
 
 설치 명령:
 
@@ -9,14 +9,20 @@
 pip install -r v2v_rebuild/requirements.txt
 ```
 
-`v2v_rebuild/requirements.txt`는 다음 내용만 가진다.
+현재 `v2v_rebuild/requirements.txt`에는 다음 영역의 패키지가 고정되어 있다.
 
 ```text
--r ../aws_requirements.txt
+gymnasium
+numpy
+stable-baselines3
+matplotlib
+pandas
+traci
+sumolib
 ```
 
-필요한 패키지가 추가되면 `v2v_rebuild/requirements.txt`가 아니라 상위
-`aws_requirements.txt`를 함께 갱신한다.
+필요한 패키지가 추가되면 이 파일과 상위 `aws_requirements.txt`를 혼동하지
+않도록, 현재 재구성 프로젝트에서 실제 import하는 경우에만 이 파일을 갱신한다.
 
 ## 현재 사용 중인 주요 패키지
 
@@ -56,7 +62,8 @@ SUMO
 - `sumo_intersection_env.py`: `gymnasium`, `numpy`, `traci`
 - `train_sumo_ppo.py` / `evaluate_sumo.py` / `compare_sumo_models.py` / `check_sumo_env.py`
 - 확장: `sweep_sumo_pdr.py`, `sweep_sumo_weather.py`, `eval_sumo_nlos.py`,
-  `run_sumo_multi_npc.py` 및 대응 `plot_sumo_*.py`
+  `run_sumo_multi_npc.py`, `run_multiseed.py`, `replay_sumo.py` 및 대응
+  `plot_sumo_*.py`
 
 SUMO 바이너리:
 

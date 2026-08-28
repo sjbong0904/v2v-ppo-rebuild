@@ -17,6 +17,7 @@ def evaluate(
     sensor_range: float = 35.0,
     nlos_blocker: bool = False,
     multi_npc: bool = False,
+    eval_seed: int = 123,
 ) -> dict[str, float | int | str]:
     env = SumoIntersectionEnv(
         observation_mode=mode,
@@ -24,7 +25,7 @@ def evaluate(
         sensor_range=sensor_range,
         nlos_blocker=nlos_blocker,
         multi_npc=multi_npc,
-        seed=123,
+        seed=eval_seed,
     )
     model = PPO.load(model_path) if model_path else None
 
@@ -44,7 +45,7 @@ def evaluate(
 
     try:
         for ep in range(episodes):
-            obs, _ = env.reset(seed=ep)
+            obs, _ = env.reset(seed=eval_seed + ep)
             done = False
             ep_reward = 0.0
             info: dict = {}
@@ -79,6 +80,7 @@ def evaluate(
         "model": model_path or "rule",
         "mode": mode,
         "episodes": episodes,
+        "eval_seed": eval_seed,
         "sensor_range": sensor_range,
         "pdr_scale": pdr_scale,
         "nlos_blocker": int(nlos_blocker),

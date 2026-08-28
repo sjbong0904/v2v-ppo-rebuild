@@ -14,11 +14,31 @@
 
 ## 현재 단계
 
-**Stage 4 확장까지 완료**한 상태다.
+**Stage 4 확장까지 완료**한 상태다. 현재는 새로운 시뮬레이터를 추가하지 않고,
+졸업작품 최종 검증과 발표 산출물을 정리하는 단계다.
 
 - Stage 1–3: kinematic blind-intersection에서 V2V 필요성·PDR 민감도 검증
 - Stage 4: TraCI-only SUMO 이식 + PPO 3모드 비교
 - Stage 4 확장: SUMO PDR sweep, 기상(sensor_range), NLOS 폐색, 중간 multi-NPC
+
+## 졸업작품 최종 범위
+
+최종 연구 질문은 다음으로 고정한다.
+
+> 동일한 PPO 조건에서 sensor-only와 V2V 조기 관측의 안전성 차이가 나타나는가?
+
+핵심 비교는 `sensor_only`, `perfect_v2v`, `lossy_v2v`이며, `lossy_v2v`는
+PDR/AoI sweep으로 통신 품질과 안전성의 관계를 확인한다. kinematic 환경에서
+원인을 분리한 뒤 SUMO에서 같은 관측 구조를 재현한다.
+
+다음 프로젝트는 이 저장소에 직접 통합하지 않는다.
+
+- CARLA/OpenCDA 및 대규모 cooperative perception
+- Veins/ns-3 또는 실제 무선 통신 스택
+- LLaVA/V2V-GoT 기반 MLLM
+- 완전 다중에이전트 RL
+
+이 항목들은 현재 결론을 확장하는 후속 연구로 남긴다.
 
 핵심 주장:
 
@@ -66,6 +86,9 @@
 - `evaluate_simple.py` / `evaluate_sumo.py`
 - `compare_models.py` / `compare_sumo_models.py`
 - `check_env.py` / `check_sumo_env.py`
+- `run_multiseed.py`: 동일 학습 조건의 seed 반복 및 평균/표준편차/95% CI 계산
+- `plot_multiseed_results.py`: 다중 seed 안전성 요약 그래프 생성
+- `replay_sumo.py`: 한 episode의 SUMO GUI replay와 관측·행동 trace 저장
 
 Stage 4 확장 스크립트
 
@@ -79,7 +102,7 @@ Stage 4 확장 스크립트
 - `ROADMAP.md`, `EXPERIMENT_SUMMARY.md`
 - `PRESENTATION_NOTES.md` (발표용 그림/표)
 - `SERVER_COMPATIBILITY.md`
-- `requirements.txt` → 상위 `aws_requirements.txt` 참조
+- `requirements.txt`: 이 재구성 프로젝트만 실행하는 독립 의존성 목록
 
 ## 실행 예시
 
@@ -87,6 +110,7 @@ Stage 4 확장 스크립트
 
 ```powershell
 cd C:\Users\sjbon\Desktop\졸작\코드\v2v_rebuild
+python -m pip install -r requirements.txt
 python check_env.py --episodes 200 --out-dir runs/baseline_v3
 python train_simple_ppo.py --timesteps 50000 --mode perfect_v2v --out runs/simple_ppo_50k_v3.zip
 ```
@@ -127,12 +151,76 @@ python run_sumo_multi_npc.py --timesteps 50000 --episodes 100
 python plot_sumo_multi_npc_results.py
 ```
 
+### 최종 반복 실험
+
+아래 명령은 각 관측 모드별로 모델을 seed마다 따로 학습하고, 학습한 모드에서
+동일한 episode 수로 평가한다. 기존 모델이 있으면 재학습하지 않고 결과를 다시
+집계한다.
+
+```powershell
+python run_multiseed.py `
+  --environment simple `
+  --timesteps 50000 `
+  --episodes 100 `
+  --seeds 0 1 2 `
+  --out-dir runs/multiseed/simple
+
+python run_multiseed.py `
+  --environment sumo `
+  --timesteps 50000 `
+  --episodes 100 `
+  --seeds 0 1 2 `
+  --out-dir runs/multiseed/sumo
+
+python plot_multiseed_results.py `
+  --summary runs/multiseed/simple/summary.csv
+
+python plot_multiseed_results.py `
+  --summary runs/multiseed/sumo/summary.csv
+```
+
+결과는 각 디렉토리의 `raw_results.csv`와 `summary.csv`에 저장된다. `summary.csv`
+에는 mode별 평균, 표준편차, 95% confidence interval half-width가 포함된다.
+시간이 부족하면 `--timesteps 10000 --episodes 30`으로 smoke test를 먼저 실행할
+수 있다.
+
+현재 완료된 3-seed 결과 요약:
+
+- kinematic: `perfect_v2v`/`lossy_v2v` 충돌률 0.0%, `sensor_only` 충돌률
+  43.3% ± 3.1%
+- SUMO: `perfect_v2v`/`lossy_v2v` 충돌률 0.0%, `sensor_only` 충돌률
+  16.0% ± 15.9%
+
+위 수치는 seed 간 평균 ± 표준편차이며, seed별 원자료와 95% CI는 각
+`summary.csv`에 있다.
+
+### SUMO replay
+
+`--gui`를 사용하면 동일 episode seed에서 차량 움직임과 PPO 행동을 SUMO-GUI로
+확인할 수 있다. 실행 후 trace는 CSV로 저장된다.
+
+```powershell
+python replay_sumo.py `
+  --model runs/multiseed/sumo/ppo_seed0_perfect_v2v.zip `
+  --mode perfect_v2v `
+  --episode-seed 7 `
+  --gui `
+  --delay 0.05 `
+  --out runs/replay/sumo_seed0_perfect.csv
+```
+
+sensor-only와 V2V를 같은 `--episode-seed`로 각각 replay하면, `visible`,
+`sensor_visible`, `occluded`, `aoi` 열을 이용해 관측 시점 차이를 비교할 수 있다.
+현재 seed 7 예시 trace는 `runs/replay/sumo_seed0_perfect.csv`와
+`runs/replay/sumo_seed0_sensor.csv`에 있다.
+
 ## 보관 중인 결과 산출물
 
 `runs/`에는 최종 실험만 둔다.
 
 - kinematic: `baseline_v3/`, `simple_ppo_*_v3.zip`, `simple_ppo_lossy_50k_stage3.zip`, stage2/3 CSV
 - SUMO: `sumo_baseline/`, `sumo_ppo_50k_*.zip`, multi-NPC 모델, stage4/확장 CSV
+- 최종 반복: `multiseed/simple/`, `multiseed/sumo/`, `replay/`
 - 중간 버전(`*_v2`, 구 baseline)과 `episodes.csv`는 제거했다.
 
 `presentation/`에는 Stage 3·4 발표용 그래프를 둔다.

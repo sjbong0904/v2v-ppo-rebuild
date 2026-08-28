@@ -272,6 +272,76 @@ PPO 3x3 (`runs/sumo_stage4_3x3_comparison.csv`, 100 episode):
 
 ## 다음 실험
 
-- 발표자료/데모 정리
-- 필요 시 multi-seed 통계 보강
-- 완전 다중에이전트 RL은 향후 궁극 목표로 분리
+현재 작품의 최종 검증은 새로운 simulator나 perception 모델을 추가하는 대신,
+동일한 학습 조건의 반복과 재현성 정리에 집중한다.
+
+### 최종 검증 프로토콜
+
+- 관측 모드: `sensor_only`, `perfect_v2v`, `lossy_v2v`
+- 학습 알고리즘: 모든 조건에서 동일한 Stable-Baselines3 PPO
+- 기본 학습량: mode별 50,000 steps
+- 기본 평가량: seed별 100 episodes
+- 권장 seed: `0`, `1`, `2`
+- 핵심 지표: collision rate, arrival rate, near-miss rate
+- 통신 지표: mean final AoI, mean V2V receptions
+- 결과 파일: `runs/multiseed/{simple,sumo}/raw_results.csv`,
+  `runs/multiseed/{simple,sumo}/summary.csv`
+
+반복 실행은 다음 명령으로 수행한다.
+
+```powershell
+python run_multiseed.py --environment simple --timesteps 50000 --episodes 100 --seeds 0 1 2
+python run_multiseed.py --environment sumo --timesteps 50000 --episodes 100 --seeds 0 1 2
+```
+
+`summary.csv`의 `*_mean`, `*_std`, `*_ci95_half_width`를 최종 발표용 통계로
+사용한다. 기존 단일 seed 결과와 반복 결과가 다르면 seed·episode·모델 경로를
+함께 기록하고, 어느 결과를 사용했는지 발표자료에 명시한다.
+
+### 다중 seed 반복 결과
+
+seed 0, 1, 2에서 각 mode를 50,000 step 학습하고, seed별 100 episode를
+학습한 mode에서 평가했다.
+
+- kinematic:
+  - `perfect_v2v`: 충돌률 `0.0% ± 0.0%`, 도착률 `100.0% ± 0.0%`
+  - `lossy_v2v`: 충돌률 `0.0% ± 0.0%`, 도착률 `100.0% ± 0.0%`
+  - `sensor_only`: 충돌률 `43.3% ± 3.1%`, 도착률 `56.7% ± 3.1%`,
+    near miss `67.7% ± 7.6%`
+- SUMO:
+  - `perfect_v2v`: 충돌률 `0.0% ± 0.0%`, 도착률 `100.0% ± 0.0%`
+  - `lossy_v2v`: 충돌률 `0.0% ± 0.0%`, 도착률 `100.0% ± 0.0%`
+  - `sensor_only`: 충돌률 `16.0% ± 15.9%`, 도착률 `84.0% ± 15.9%`,
+    near miss `34.0% ± 22.9%`
+
+위 `±` 값은 seed 간 표준편차이며, 원본 값과 95% CI half-width는 각각
+`runs/multiseed/simple/summary.csv`와 `runs/multiseed/sumo/summary.csv`에
+저장되어 있다. SUMO sensor-only의 seed 간 편차가 크므로 “항상 16%”가 아니라
+“평균 16%, seed에 따른 변동이 있음”으로 해석한다.
+
+### 최종 범위 밖
+
+- CARLA/OpenCDA 및 대규모 cooperative perception
+- Veins/ns-3 기반 실제 무선 통신
+- V2V-GoT/LLaVA 기반 MLLM
+- 완전 다중에이전트 RL
+
+위 항목은 Stage 5 이후의 후속 연구로 분리한다.
+
+## 다음 대화에서 진행할 실험
+
+기존 프로젝트의 목표였던 다중 배경교통을 현재의 검증 구조에 되돌린다.
+학습 에이전트는 ego 1대로 유지하고, target을 포함한 rule-based 배경차량을
+3~4대로 늘린다. 모든 관측 모드에서 같은 차량·경로·속도·seed를 사용하고,
+`sensor_only`, `perfect_v2v`, `lossy_v2v`의 정보 채널만 비교한다.
+
+이 실험의 위치는 다음과 같다.
+
+- 핵심 인과 실험: 1 ego + 1 target
+- 보조 robustness 실험: 1 ego + 3~4 rule-based background vehicles
+- 이번 범위에 포함하지 않음: 여러 학습 차량, MAPPO, CARLA, 실제 무선통신
+
+초기 구현에서는 기존 6차원 observation을 유지하고, TTC가 가장 급한 차량을
+`primary_threat`로 선택한다. 대신 ego뿐 아니라 전체 차량의 충돌·완주 여부를
+별도로 기록한다. 여러 상대차량의 정보를 모두 observation에 넣는 것은
+primary-threat 실험 결과를 확인한 뒤 결정한다.

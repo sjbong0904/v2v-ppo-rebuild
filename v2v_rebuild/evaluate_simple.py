@@ -14,8 +14,9 @@ def evaluate(
     mode: str,
     episodes: int,
     pdr_scale: float = 1.0,
+    eval_seed: int = 123,
 ) -> dict[str, float | int | str]:
-    env = SimpleIntersectionEnv(observation_mode=mode, pdr_scale=pdr_scale, seed=123)
+    env = SimpleIntersectionEnv(observation_mode=mode, pdr_scale=pdr_scale, seed=eval_seed)
     model = PPO.load(model_path) if model_path else None
 
     collisions = 0
@@ -31,7 +32,7 @@ def evaluate(
     v2v_rx_total = 0
 
     for ep in range(episodes):
-        obs, _ = env.reset(seed=ep)
+        obs, _ = env.reset(seed=eval_seed + ep)
         done = False
         ep_reward = 0.0
         info = {}
@@ -62,6 +63,7 @@ def evaluate(
         "model": model_path or "rule",
         "mode": mode,
         "episodes": episodes,
+        "eval_seed": eval_seed,
         "collision_rate": collisions / episodes,
         "arrival_rate": arrivals / episodes,
         "near_miss_rate": near_misses / episodes,

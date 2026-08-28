@@ -126,3 +126,38 @@ A. 기본 교차 + 기상 + NLOS + 중간 다중으로 센서 실패 모드를 �
 
 > V2V는 부가 feature가 아니라, blind-intersection에서 PPO 안전정책 학습과
 > 충돌회피를 좌우하는 핵심 정보 채널이다.
+
+---
+
+## D. 최종 발표 범위와 검증 상태
+
+### 발표에서 최종적으로 보여줄 것
+
+1. 같은 PPO와 같은 행동공간에서 `sensor_only`, `perfect_v2v`, `lossy_v2v`를
+   각각 학습한 3-way 비교
+2. kinematic 결과와 SUMO 결과의 방향 일치
+3. PDR 감소에 따른 V2V 수신 감소, AoI 증가, 충돌률 증가
+4. 같은 episode seed를 사용한 SUMO-GUI replay
+
+### 외부 오픈소스의 위치
+
+[V2V Cooperative Intersection RL](https://huggingface.co/amin-amiri/v2v-intersection-rl)은
+동일 budget과 관측 ablation을 사용하는 유사 연구로 참고한다. 모델 코드를
+현재 환경에 직접 통합하지 않는다. OpenCDA, Veins/ns-3, V2V-GoT/LLaVA,
+완전 다중에이전트 RL은 후속 연구로 분리한다.
+
+### 최종 다중 seed 결과
+
+seed 0, 1, 2에서 각 mode를 50,000 step 학습하고, seed별 100 episode를
+학습한 mode에서 평가했다.
+
+- kinematic: perfect/lossy 충돌률 `0.0% ± 0.0%`,
+  sensor-only `43.3% ± 3.1%`
+- SUMO: perfect/lossy 충돌률 `0.0% ± 0.0%`,
+  sensor-only `16.0% ± 15.9%`
+
+`±`는 seed 간 표준편차다. SUMO sensor-only는 seed 편차가 크므로 “항상
+16%”가 아니라 평균값으로 설명한다. 전체 지표와 95% CI는
+`runs/multiseed/simple/summary.csv`,
+`runs/multiseed/sumo/summary.csv`를 사용한다.
+요약 그래프는 각 디렉토리의 `multiseed_safety_summary.png`를 사용한다.

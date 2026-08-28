@@ -204,7 +204,24 @@ Stage 4 종합 해석:
 - 기상·NLOS·중간 다중 장면으로 센서 실패 모드를 넓혀도 V2V 우위가 유지된다.
 - 완전 다중에이전트 RL(상대도 학습)은 향후 궁극 목표로 분리한다.
 
-## Stage 5 (향후): 완전 다중에이전트 RL
+## 졸업작품 마무리 단계
+
+Stage 4 확장까지 핵심 기능은 완료되었다. 졸업작품에서는 외부 오픈소스를
+직접 통합하지 않고, 다음 세 가지를 최종 산출물로 보강한다.
+
+- 핵심 3-way PPO 비교의 다중 seed 반복
+- kinematic·SUMO 결과의 평균, 표준편차, 95% 신뢰구간 정리
+- README, SUMO-GUI replay, 발표자료를 이용한 재현성 확보
+
+최종 주장은 다음 문장으로 제한한다.
+
+> 교차로 blind-spot에서 센서만으로는 충돌회피 정책 학습이 어렵지만,
+> V2V 조기 정보로 그 한계를 극복할 수 있다.
+
+V2V-GoT, OpenCDA, Veins/ns-3와 같은 오픈소스는 관련 연구와 후속 확장
+참고자료로만 사용한다. 현재 작품의 실험 변수인 관측 채널과 PPO를 바꾸지 않는다.
+
+## Stage 5 (후속 연구): 완전 다중에이전트 RL
 
 목표 후보:
 
@@ -215,4 +232,49 @@ Stage 4 종합 해석:
 
 - Stage 4까지의 단일 ego + rule NPC 중간 단계가 안정적일 것
 - 관측/보상/통신 ablation을 유지한 채 에이전트 수만 늘릴 것
+
+## 다음 대화에서 진행할 실험: 배경차량 확장
+
+기존 프로젝트의 원래 목표는 학습 차량 여러 대가 아니라, **PPO로 학습하는
+ego 차량 1대와 여러 배경차량이 존재하는 SUMO 교차로**였다. 기존
+`v2x_env_0512.py`에는 `MIN_BG_VEHICLES = 4`, `N_NEIGHBORS = 3`이 설정되어
+있다. 현재 `v2v_rebuild`는 원인 분리를 위해 1 ego + 1 target을 기본으로 하고,
+SUMO `multi-NPC`에서는 rule-based NPC 1대를 추가한 상태다.
+
+다음 실험은 완전 다중에이전트 RL이 아니라, 기존 목표에 가까운 **controlled
+background-traffic robustness test**로 진행한다.
+
+### 실험 구조
+
+- 학습 차량: ego 1대
+- 배경차량: target을 포함한 rule-based 차량 3~4대
+- 배경차량의 경로·속도·출발 seed는 모든 관측 모드에서 동일
+- 비교 모드: `sensor_only`, `perfect_v2v`, `lossy_v2v`
+- 변경 변수: ego가 상대차량 정보를 얻는 채널과 시점만 변경
+- 학습 차량 추가, MAPPO, CARLA, Veins/ns-3는 이번 실험에 포함하지 않음
+
+### 평가 지표
+
+- ego collision rate / arrival rate
+- 전체 차량 collision rate / completion rate
+- near-miss rate
+- 평균 지연시간 또는 episode steps
+- `lossy_v2v`의 V2V 수신 횟수와 AoI
+
+처음에는 기존 6차원 observation 구조를 유지하고, 여러 상대차량 중 가장
+위험한 차량을 `primary_threat`로 선택한다. 동시에 전체 차량의 충돌 여부를
+별도로 기록한다. 여러 차량의 상태를 모두 observation에 넣는 확장은 이
+실험이 안정화된 뒤 검토한다.
+
+### 해석 기준
+
+이 실험은 핵심 인과 실험을 대체하지 않는다.
+
+- 1 ego + 1 target: V2V 조기 관측 효과를 분리하는 핵심 결과
+- 1 ego + 3~4 background vehicles: 복잡한 교통에서도 결론이 유지되는지
+  확인하는 보조 결과
+
+현재 reward shaping도 `visible` 조건을 사용하므로, 배경차량 확장 전후로
+“관측 채널만 변경했다”는 표현이 정확한지 확인한다. 필요하면 reward를
+visibility와 독립적으로 계산하는 별도 ablation을 추가한다.
 

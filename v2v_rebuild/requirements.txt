@@ -1,2 +1,10 @@
--r ../aws_requirements.txt
+# Dependencies used by the v2v_rebuild experiments.
+# Mininet and Mininet-WiFi belong to the archived project and are not required here.
+gymnasium==1.2.3
+numpy==1.26.4
+stable-baselines3==2.8.0
+matplotlib==3.10.8
+pandas==2.3.3
+traci==1.25.0
+sumolib==1.25.0
 
