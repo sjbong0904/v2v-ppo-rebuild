@@ -219,6 +219,35 @@ PDR/AoI sweep으로 통신 품질과 안전성의 관계를 확인한다. kinema
 
 이 항목들은 현재 결론을 확장하는 후속 연구로 남긴다.
 
+## 참고한 오픈소스 및 관련 프로젝트
+
+직접 실행에 사용한 오픈소스와 연구 방향을 정할 때 참고한 프로젝트를
+구분한다. 아래 관련 프로젝트의 코드를 현재 환경에 그대로 통합한 것은 아니다.
+
+### 직접 사용한 오픈소스
+
+- [Eclipse SUMO](https://github.com/eclipse-sumo/sumo): SUMO 교통 시뮬레이터
+- [TraCI tools](https://github.com/eclipse-sumo/sumo/tree/main/tools/traci):
+  Python에서 SUMO 차량 상태를 읽고 제어하는 인터페이스
+- [Gymnasium](https://github.com/Farama-Foundation/Gymnasium): 사용자 정의
+  reinforcement learning 환경 API
+- [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3): PPO 학습
+  및 모델 저장·로드
+
+### 설계와 비교 기준을 위해 참고한 프로젝트
+
+- [V2V Cooperative Intersection RL](https://huggingface.co/amin-amiri/v2v-intersection-rl):
+  교차로 V2V 충돌회피와 관측 조건 비교 방향
+- [SUMO-V2X Communication Research, Platooning and CIM](https://github.com/sraddon/SUMO-V2X-Communication-Research-Platooning-and-CIM):
+  SUMO 기반 V2X 통신·플래투닝 시나리오
+- [V2V-GoT](https://github.com/eddyhkchiu/V2V-GoT):
+  다중 차량 정보 융합과 V2V 인지 확장 사례
+
+현재 프로젝트에서 직접 구현한 핵심은 `sensor_only`, `perfect_v2v`,
+`lossy_v2v`, PDR/AoI, blind-intersection PPO 비교이며, 위 관련 프로젝트의
+코드를 복사하거나 직접 통합하지 않았다. 실제 무선 통신, MLLM, 대규모
+cooperative perception, 완전 다중에이전트 RL은 후속 연구 범위다.
+
 핵심 주장:
 
 > 교차로 blind-spot에서 센서만으로는 충돌회피 정책 학습이 어렵지만,  

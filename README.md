@@ -18,6 +18,37 @@
 - `perfect_v2v`: V2V로 교차 차량을 조기 관측
 - `lossy_v2v`: PDR/메시지 손실/AoI가 있는 V2V
 
+## 참고한 오픈소스 및 관련 프로젝트
+
+아래 프로젝트는 직접 사용한 오픈소스와 설계 방향을 정할 때 참고한 관련
+프로젝트를 구분해 기록한 것이다. 외부 프로젝트의 코드를 현재 환경에
+그대로 통합한 것은 아니다.
+
+### 직접 사용한 오픈소스
+
+- [Eclipse SUMO](https://github.com/eclipse-sumo/sumo): 교통 시뮬레이션과
+  SUMO/TraCI 실행에 사용
+- [TraCI tools](https://github.com/eclipse-sumo/sumo/tree/main/tools/traci):
+  Python에서 SUMO 차량 상태를 읽고 ego 차량을 제어하는 인터페이스
+- [Gymnasium](https://github.com/Farama-Foundation/Gymnasium): 사용자 정의
+  reinforcement learning 환경의 API 구조
+- [Stable-Baselines3](https://github.com/DLR-RM/stable-baselines3): PPO
+  학습 및 모델 저장·로드
+
+### 설계와 비교 기준을 위해 참고한 프로젝트
+
+- [V2V Cooperative Intersection RL](https://huggingface.co/amin-amiri/v2v-intersection-rl):
+  교차로 V2V 충돌회피와 관측 조건 비교라는 실험 방향을 정할 때 참고
+- [SUMO-V2X Communication Research, Platooning and CIM](https://github.com/sraddon/SUMO-V2X-Communication-Research-Platooning-and-CIM):
+  SUMO 기반 V2X 통신·플래투닝 시나리오와 확장 가능성을 검토
+- [V2V-GoT](https://github.com/eddyhkchiu/V2V-GoT):
+  여러 차량의 정보 융합과 V2V 기반 인지 확장 사례를 검토
+
+위 관련 프로젝트의 코드는 현재 실험에 직접 포함하지 않았다. 현재 프로젝트는
+PPO와 V2V 관측 ablation을
+명확하게 검증하는 데 집중하고, 실제 무선 통신·대규모 cooperative perception·
+MLLM·완전 다중에이전트 RL은 후속 연구로 남긴다.
+
 ## 단계별 진행 과정과 의미
 
 ### Stage 0 — 기존 프로젝트 진단
