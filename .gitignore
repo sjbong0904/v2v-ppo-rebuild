@@ -32,9 +32,13 @@ Thumbs.db
 ~$*
 *.docx
 
-# Local-only presentation drafts
+# Local-only / internal notes (not for public review landing)
 v2v_rebuild/PRESENTATION_DRAFT.md
 **/PRESENTATION_DRAFT.md
+v2v_rebuild/PRESENTATION_NOTES.md
+v2v_rebuild/ROADMAP.md
+v2v_rebuild/SERVER_COMPATIBILITY.md
+v2v_rebuild/작품소개서_V2V_PPO_자율주행/
 
 # Intermediate / smoke metric dumps (canonical = presentation/테스트지표2/)
 v2v_rebuild/presentation/테스트지표/
