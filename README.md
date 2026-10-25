@@ -2,7 +2,31 @@
 
 Blind-intersection에서 **센서만으로는 충돌회피 정책 학습이 어렵지만, V2V 조기 정보로 그 한계를 극복할 수 있다**는 것을 PPO ablation으로 검증한 졸업작품 재구성 저장소입니다.
 
-메인 코드와 실험은 [`v2v_rebuild/`](v2v_rebuild/)에 있습니다.
+메인 코드: [`v2v_rebuild/`](v2v_rebuild/)
+
+## Demo
+
+> Sensor는 약 17 m / 0.5 s에야 인지해 충돌률 39–54%인 반면,  
+> Lossy V2V는 약 108 m / 6 s에 먼저 인지해 충돌을 0%로 줄인다.
+
+<p align="center">
+  <img src="v2v_rebuild/presentation/sumo_stage4_safety_comparison.png" alt="SUMO Stage4 safety comparison" width="720" />
+</p>
+
+<p align="center">
+  <img src="v2v_rebuild/presentation/sumo_pdr_collision_rate.png" alt="PDR sweep collision rate" width="720" />
+</p>
+
+| 로컬 GUI | 영상 촬영 |
+| --- | --- |
+| [`demo_package/`](v2v_rebuild/demo_package/) → `run_demo.bat` | [`DEMO_RECORDING.md`](v2v_rebuild/DEMO_RECORDING.md) |
+
+영상(권장): [`DEMO_RECORDING.md`](v2v_rebuild/DEMO_RECORDING.md)대로 sensor vs lossy를 찍은 뒤  
+`v2v_rebuild/presentation/media/demo.gif`에 저장하고, 아래 한 줄을 Demo 문단 맨 위에 추가하세요.
+
+```markdown
+![Sensor vs Lossy V2V demo](v2v_rebuild/presentation/media/demo.gif)
+```
 
 ## 핵심 결과 (최종 지표)
 
@@ -18,7 +42,7 @@ Blind-intersection에서 **센서만으로는 충돌회피 정책 학습이 어�
 | lossy (PDR=0.3) | 0.5% | 99.5% | 100% | 96.8 m | 5.15 s | 5.3 s / 65 m |
 | multi_lossy (PDR=0.3) | 4.0% | 96.0% | 100% | 96.0 m | 4.85 s | 4.7 s / 63 m |
 
-요약 문서: [`FINAL_지표요약.md`](v2v_rebuild/presentation/테스트지표2/FINAL_지표요약.md)
+요약: [`FINAL_지표요약.md`](v2v_rebuild/presentation/테스트지표2/FINAL_지표요약.md)
 
 ## Quickstart
 
@@ -58,26 +82,25 @@ python run_metric_eval.py --episodes 200 --out-dir presentation/테스트지표_
 
 ```powershell
 cd demo_package
+.\install.bat    # 최초 1회
 .\run_demo.bat
 ```
 
-자세한 사용법은 [`v2v_rebuild/demo_package/README.md`](v2v_rebuild/demo_package/README.md)를 참고하세요.
+모델 zip은 GUI에서 Add. 상세: [`demo_package/README.md`](v2v_rebuild/demo_package/README.md)
 
 ## 저장소 구조
 
 ```text
 .
-├── README.md                 # 이 파일 (공개 랜딩)
+├── README.md                 # 공개 랜딩 (주장 → 데모 → 표)
 ├── LICENSE                   # MIT
 ├── legacy/                   # 초기 통합 환경 (참고용)
 └── v2v_rebuild/              # 메인 프로젝트
-    ├── simple_intersection_env.py
-    ├── sumo_intersection_env.py
-    ├── train_*.py / evaluate_*.py
+    ├── DEMO_RECORDING.md     # 데모 영상 촬영 가이드
     ├── run_metric_eval.py
     ├── sumo_data/
-    ├── runs/                 # 학습 모델 + 요약 결과
-    ├── presentation/         # 그래프·최종 지표
+    ├── runs/
+    ├── presentation/         # 그래프 · 최종 지표 · media/
     └── demo_package/         # 독립 실행 데모
 ```
 
@@ -88,7 +111,7 @@ cd demo_package
 3. **Stage 3** — `lossy_v2v` + PDR/AoI sweep  
 4. **Stage 4** — SUMO(TraCI) 이식 + 기상/NLOS/multi-NPC 확장  
 
-상세 서사: [`v2v_rebuild/README.md`](v2v_rebuild/README.md), [`v2v_rebuild/EXPERIMENT_SUMMARY.md`](v2v_rebuild/EXPERIMENT_SUMMARY.md)
+상세: [`v2v_rebuild/README.md`](v2v_rebuild/README.md) · [`EXPERIMENT_SUMMARY.md`](v2v_rebuild/EXPERIMENT_SUMMARY.md)
 
 ## 직접 사용한 오픈소스
 

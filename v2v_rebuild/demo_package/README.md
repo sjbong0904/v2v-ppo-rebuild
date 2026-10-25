@@ -3,6 +3,9 @@
 교차로 V2V / 센서 관측 비교용 데모 뷰어입니다.  
 **모델(`.zip`)은 이 패키지에 포함되어 있지 않습니다.** 모델은 따로 받은 뒤 GUI에 넣으면 됩니다.
 
+README용 **sensor vs lossy 영상**을 찍을 때는  
+[`../DEMO_RECORDING.md`](../DEMO_RECORDING.md) 시나리오(각 ~15초)를 따르세요.
+
 ---
 
 ## 가장 빠른 시작 (Windows 올인원)

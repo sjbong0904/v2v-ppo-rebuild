@@ -40,7 +40,8 @@ python evaluate_sumo.py --model runs/sumo_ppo_50k_lossy.zip --mode lossy_v2v --e
 python run_metric_eval.py --smoke 5   # 지표 로깅 스모크 테스트
 ```
 
-GUI 데모: [`demo_package/README.md`](demo_package/README.md)
+GUI 데모: [`demo_package/README.md`](demo_package/README.md)  
+데모 영상 촬영: [`DEMO_RECORDING.md`](DEMO_RECORDING.md) (`presentation/media/demo.gif`)
 
 ## 현재 단계
 
