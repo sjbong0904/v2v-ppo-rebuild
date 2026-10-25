@@ -124,6 +124,7 @@ class SumoIntersectionEnv(gym.Env):
         sumo_binary: str = "sumo",
         config_file: str = DEFAULT_SUMOCFG,
         sumo_port: int | None = None,
+        traci_label: str | None = None,
     ):
         super().__init__()
         if observation_mode not in {"perfect_v2v", "sensor_only", "lossy_v2v"}:
@@ -144,6 +145,8 @@ class SumoIntersectionEnv(gym.Env):
         self.sumo_binary = find_sumo_binary(sumo_binary)
         self.config_file = os.path.abspath(config_file)
         self.sumo_port = sumo_port
+        # Unique TraCI label so two envs can run at once (split compare).
+        self.traci_label = traci_label or f"sumo_{id(self)}"
         self.traci_started = False
 
         self.action_space = spaces.Discrete(5)
@@ -168,6 +171,11 @@ class SumoIntersectionEnv(gym.Env):
         self.last_pdr = 0.0
         self._scenario = Scenario(TARGET_SPEED, TARGET_SPEED, TARGET_START_OFFSET)
 
+    def activate(self) -> None:
+        """Make this env's TraCI connection current (needed for multi-env / drawing)."""
+        if self.traci_started:
+            traci.switch(self.traci_label)
+
     def reset(
         self,
         *,
@@ -181,6 +189,7 @@ class SumoIntersectionEnv(gym.Env):
         self._close_traci()
         self._scenario = self._sample_scenario()
         self._start_sumo()
+        self.activate()
         self._spawn_vehicles()
 
         self.steps = 0
@@ -199,6 +208,7 @@ class SumoIntersectionEnv(gym.Env):
         return self._get_obs(), {}
 
     def step(self, action: int):
+        self.activate()
         action = int(action)
         accel = ACTION_ACCEL[action]
 
@@ -236,24 +246,11 @@ class SumoIntersectionEnv(gym.Env):
 
         reward = self._reward(action, collision, arrived)
         self.prev_action = action
-        info = {
-            "collision": collision,
-            "arrived": arrived,
-            "near_miss": self.near_miss,
-            "min_distance": self.min_distance,
-            "ttc": self._ttc_to_conflict(),
-            "visible": self._target_visible(),
-            "sensor_visible": self._sensor_visible(),
-            "occluded": self._is_occluded(),
-            "primary_threat": self.primary_threat_id,
-            "aoi": self.bsm_aoi,
-            "pdr": self.last_pdr,
-            "v2v_rx_count": self.v2v_rx_count,
-            "v2v_rx_this_step": self.v2v_rx_this_step,
-        }
+        info = self._build_info(collision=collision, arrived=arrived)
         return self._get_obs(), reward, terminated, truncated, info
 
     def rule_based_action(self) -> int:
+        self.activate()
         ttc = self._ttc_to_conflict()
         signed_gap = self._signed_time_gap()
         visible = self._target_visible()
@@ -302,8 +299,9 @@ class SumoIntersectionEnv(gym.Env):
             "--no-warnings", "true",
             "--no-step-log", "true",
         ]
-        traci.start(cmd, port=port, numRetries=10)
+        traci.start(cmd, port=port, label=self.traci_label, numRetries=10)
         self.traci_started = True
+        traci.switch(self.traci_label)
 
     def _spawn_vehicles(self) -> None:
         scenario = self._scenario
@@ -372,9 +370,13 @@ class SumoIntersectionEnv(gym.Env):
     def _close_traci(self) -> None:
         if self.traci_started:
             try:
-                traci.close()
+                traci.getConnection(self.traci_label).close()
             except Exception:
-                pass
+                try:
+                    traci.switch(self.traci_label)
+                    traci.close(False)
+                except Exception:
+                    pass
             self.traci_started = False
 
     def _sync_ego_pose(self) -> None:
@@ -625,7 +627,22 @@ class SumoIntersectionEnv(gym.Env):
             return float(np.hypot(tx - ex, ty - ey))
         return float(np.hypot(self.target_x, 0.0 - self.ego_y))
 
+    def _ego_time_to_conflict(self) -> float:
+        """Seconds until ego reaches the junction line (y=0)."""
+        ego_t = (0.0 - self.ego_y) / max(self.ego_speed, 0.1)
+        if ego_t < 0.0:
+            return 0.0
+        return float(np.clip(ego_t, 0.0, 30.0))
+
+    def _target_time_to_conflict(self) -> float:
+        """Seconds until primary threat reaches the junction."""
+        target_t = self.target_x / max(self.target_speed, 0.1)
+        if target_t < 0.0:
+            return 0.0
+        return float(np.clip(target_t, 0.0, 30.0))
+
     def _ttc_to_conflict(self) -> float:
+        """Absolute arrival-time gap |t_ego - t_target| (legacy field name)."""
         ego_t = (0.0 - self.ego_y) / max(self.ego_speed, 0.1)
         target_t = self.target_x / max(self.target_speed, 0.1)
         if ego_t < 0.0 or target_t < 0.0:
@@ -638,6 +655,34 @@ class SumoIntersectionEnv(gym.Env):
         if ego_t < 0.0 or target_t < 0.0:
             return 10.0
         return float(np.clip(ego_t - target_t, -10.0, 10.0))
+
+    def _build_info(self, collision: bool, arrived: bool) -> dict[str, Any]:
+        return {
+            "collision": collision,
+            "arrived": arrived,
+            "near_miss": self.near_miss,
+            "min_distance": self.min_distance,
+            "distance": self._distance_to_target(),
+            "ttc": self._ttc_to_conflict(),  # legacy: |arrival gap|
+            "arrival_gap": self._ttc_to_conflict(),
+            "ego_ttc": self._ego_time_to_conflict(),
+            "target_ttc": self._target_time_to_conflict(),
+            "visible": self._target_visible(),
+            "sensor_visible": self._sensor_visible(),
+            "occluded": self._is_occluded(),
+            "primary_threat": self.primary_threat_id,
+            "aoi": self.bsm_aoi,
+            "pdr": self.last_pdr,
+            "v2v_rx_count": self.v2v_rx_count,
+            "v2v_rx_this_step": self.v2v_rx_this_step,
+            "ego_speed": float(self.ego_speed),
+            "target_speed": float(self.target_speed),
+            "npc_speed": float(self.npc_speed) if self.multi_npc else None,
+            "scenario_ego_speed": float(self._scenario.ego_speed),
+            "scenario_target_speed": float(self._scenario.target_speed),
+            "scenario_target_offset": float(self._scenario.target_start_offset),
+            "scenario_npc_speed": float(self.npc_speed) if self.multi_npc else None,
+        }
 
     def _get_obs(self) -> np.ndarray:
         visible = self._target_visible()
@@ -725,21 +770,7 @@ class SumoIntersectionEnv(gym.Env):
         return float(np.clip(reward, -10.0, 10.0))
 
     def _empty_info(self, collision: bool, arrived: bool) -> dict[str, Any]:
-        return {
-            "collision": collision,
-            "arrived": arrived,
-            "near_miss": self.near_miss,
-            "min_distance": self.min_distance,
-            "ttc": self._ttc_to_conflict(),
-            "visible": self._target_visible(),
-            "sensor_visible": self._sensor_visible(),
-            "occluded": self._is_occluded(),
-            "primary_threat": self.primary_threat_id,
-            "aoi": self.bsm_aoi,
-            "pdr": self.last_pdr,
-            "v2v_rx_count": self.v2v_rx_count,
-            "v2v_rx_this_step": self.v2v_rx_this_step,
-        }
+        return self._build_info(collision=collision, arrived=arrived)
 
 
 def _segment_intersects_aabb(

@@ -44,3 +44,8 @@ v2v_rebuild/presentation/*.zip
 
 # Bulky per-episode dumps (keep summary.csv only where applicable)
 v2v_rebuild/runs/**/episodes.csv
+
+# Demo viewer frame dumps / local screenshots
+v2v_rebuild/presentation/media/frames/
+v2v_rebuild/presentation/media/screenshot_*.png
+v2v_rebuild/demo_package/media/

@@ -10,6 +10,12 @@ Blind-intersection에서 **센서만으로는 충돌회피 정책 학습이 어�
 > Lossy V2V는 약 108 m / 6 s에 먼저 인지해 충돌을 0%로 줄인다.
 
 <p align="center">
+  <img src="v2v_rebuild/presentation/media/demo.gif" alt="Sensor vs Lossy V2V compare demo" width="900" />
+</p>
+
+<p align="center"><em>Compare mode — sensor-only (left) vs lossy V2V (right), NLOS occlusion</em></p>
+
+<p align="center">
   <img src="v2v_rebuild/presentation/sumo_stage4_safety_comparison.png" alt="SUMO Stage4 safety comparison" width="720" />
 </p>
 
@@ -20,13 +26,6 @@ Blind-intersection에서 **센서만으로는 충돌회피 정책 학습이 어�
 | 로컬 GUI | 영상 촬영 |
 | --- | --- |
 | [`demo_package/`](v2v_rebuild/demo_package/) → `run_demo.bat` | [`DEMO_RECORDING.md`](v2v_rebuild/DEMO_RECORDING.md) |
-
-영상(권장): [`DEMO_RECORDING.md`](v2v_rebuild/DEMO_RECORDING.md)대로 sensor vs lossy를 찍은 뒤  
-`v2v_rebuild/presentation/media/demo.gif`에 저장하고, 아래 한 줄을 Demo 문단 맨 위에 추가하세요.
-
-```markdown
-![Sensor vs Lossy V2V demo](v2v_rebuild/presentation/media/demo.gif)
-```
 
 ## 핵심 결과 (최종 지표)
 

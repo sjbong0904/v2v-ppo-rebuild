@@ -2,11 +2,15 @@
 
 README 상단 데모용 파일을 여기에 둡니다.
 
-| 파일 | 용도 |
+| 경로 | 용도 |
 | --- | --- |
-| `demo.gif` | GitHub README에 바로 embed (권장, ≤15 MB) |
-| `demo.mp4` | 원본/고화질 (링크 또는 releases에 올려도 됨) |
+| `demo.gif` | GitHub README embed (현재 ~1.3 MB, 960×540 @12fps) |
+| `demo.mp4` | 원본/고화질 (선택) |
+| `frames/<timestamp>/` | Demo Viewer **Record frames** PNG 시퀀스 |
+| `screenshot_*.png` | 단축키 `C` 스크린샷 |
 
-촬영 절차: [`../../DEMO_RECORDING.md`](../../DEMO_RECORDING.md)
+촬영: [`../../DEMO_RECORDING.md`](../../DEMO_RECORDING.md)
 
-파일이 생기면 루트 `README.md`의 Demo 섹션에서 주석이 해제된 embed 경로가 그대로 동작합니다.
+```powershell
+python tools/frames_to_gif.py presentation/media/frames/<timestamp> --out presentation/media/demo.gif
+```

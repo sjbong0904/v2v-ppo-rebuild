@@ -124,6 +124,7 @@ class SumoIntersectionEnv(gym.Env):
         sumo_binary: str = "sumo",
         config_file: str = DEFAULT_SUMOCFG,
         sumo_port: int | None = None,
+        traci_label: str | None = None,
     ):
         super().__init__()
         if observation_mode not in {"perfect_v2v", "sensor_only", "lossy_v2v"}:
@@ -144,6 +145,8 @@ class SumoIntersectionEnv(gym.Env):
         self.sumo_binary = find_sumo_binary(sumo_binary)
         self.config_file = os.path.abspath(config_file)
         self.sumo_port = sumo_port
+        # Unique TraCI label so two envs can run at once (split compare).
+        self.traci_label = traci_label or f"sumo_{id(self)}"
         self.traci_started = False
 
         self.action_space = spaces.Discrete(5)
@@ -168,6 +171,11 @@ class SumoIntersectionEnv(gym.Env):
         self.last_pdr = 0.0
         self._scenario = Scenario(TARGET_SPEED, TARGET_SPEED, TARGET_START_OFFSET)
 
+    def activate(self) -> None:
+        """Make this env's TraCI connection current (needed for multi-env / drawing)."""
+        if self.traci_started:
+            traci.switch(self.traci_label)
+
     def reset(
         self,
         *,
@@ -181,6 +189,7 @@ class SumoIntersectionEnv(gym.Env):
         self._close_traci()
         self._scenario = self._sample_scenario()
         self._start_sumo()
+        self.activate()
         self._spawn_vehicles()
 
         self.steps = 0
@@ -199,6 +208,7 @@ class SumoIntersectionEnv(gym.Env):
         return self._get_obs(), {}
 
     def step(self, action: int):
+        self.activate()
         action = int(action)
         accel = ACTION_ACCEL[action]
 
@@ -240,6 +250,7 @@ class SumoIntersectionEnv(gym.Env):
         return self._get_obs(), reward, terminated, truncated, info
 
     def rule_based_action(self) -> int:
+        self.activate()
         ttc = self._ttc_to_conflict()
         signed_gap = self._signed_time_gap()
         visible = self._target_visible()
@@ -288,8 +299,9 @@ class SumoIntersectionEnv(gym.Env):
             "--no-warnings", "true",
             "--no-step-log", "true",
         ]
-        traci.start(cmd, port=port, numRetries=10)
+        traci.start(cmd, port=port, label=self.traci_label, numRetries=10)
         self.traci_started = True
+        traci.switch(self.traci_label)
 
     def _spawn_vehicles(self) -> None:
         scenario = self._scenario
@@ -358,9 +370,13 @@ class SumoIntersectionEnv(gym.Env):
     def _close_traci(self) -> None:
         if self.traci_started:
             try:
-                traci.close()
+                traci.getConnection(self.traci_label).close()
             except Exception:
-                pass
+                try:
+                    traci.switch(self.traci_label)
+                    traci.close(False)
+                except Exception:
+                    pass
             self.traci_started = False
 
     def _sync_ego_pose(self) -> None:

@@ -8,4 +8,5 @@ pandas==2.3.3
 traci==1.25.0
 sumolib==1.25.0
 tkinterdnd2==0.4.3
+Pillow==11.3.0
 

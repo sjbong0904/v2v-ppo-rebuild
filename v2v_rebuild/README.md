@@ -1,5 +1,9 @@
 # V2V 기반 PPO 자율주행 에이전트 재구성
 
+![Demo: sensor-only vs lossy V2V at an NLOS intersection](presentation/media/demo.gif)
+
+*Compare mode — sensor-only (left) vs lossy V2V (right) under NLOS occlusion.*
+
 이 디렉토리는 기존 졸업작품 코드를 바로 폐기하지 않고, V2V 기반 PPO
 자율주행 문제를 작은 단위부터 다시 검증하기 위해 만든 재구성 작업공간이다.
 

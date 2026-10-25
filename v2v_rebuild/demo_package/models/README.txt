@@ -1,6 +1,11 @@
-Put PPO model .zip files here (optional).
+Default PPO checkpoints (auto-loaded by the demo):
 
-You can also Add / drag-drop models from any other folder in the GUI.
+  sumo_ppo_50k_sensor.zip        — sensor-only, single threat
+  sumo_ppo_50k_lossy.zip         — lossy V2V, single threat
+  sumo_ppo_50k_multi_sensor.zip  — sensor-only, multi-NPC
+  sumo_ppo_50k_multi_lossy.zip   — lossy V2V, multi-NPC
 
-Filename keywords:
-  lossy, perfect, sensor, multi
+You can also Add / drag-drop more .zip models from any folder.
+
+Filename keywords used for profile detection:
+  sensor, lossy, perfect, multi
