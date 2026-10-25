@@ -11,6 +11,8 @@ RUNS_DIR = Path("runs")
 OUT_DIR = Path("presentation")
 SUMMARY = RUNS_DIR / "sumo_pdr_sweep_summary.csv"
 COMPARE = RUNS_DIR / "sumo_stage4_3x3_comparison.csv"
+# Canonical final metrics (preferred source for the README safety bar).
+FINAL_SUMMARY = OUT_DIR / "테스트지표2" / "summary_final.csv"
 
 
 def _read_rows(path: Path) -> list[dict[str, str]]:
@@ -60,18 +62,44 @@ def line_plot(
 
 
 def grouped_safety_bar() -> None:
-    rows = _read_rows(COMPARE)
-    selected = [
-        row for row in rows
-        if (row["train_model"], row["eval_mode"]) in {
-            ("perfect_v2v", "perfect_v2v"),
-            ("lossy_v2v", "lossy_v2v"),
-            ("sensor_only", "sensor_only"),
-        }
-    ]
-    labels = [row["eval_mode"] for row in selected]
-    collision = [float(row["collision_rate"]) * 100.0 for row in selected]
-    near_miss = [float(row["near_miss_rate"]) * 100.0 for row in selected]
+    """README bar: sensor / lossy / lossy@PDR0.3 (no perfect)."""
+    # Prefer canonical final metrics; fall back to stage4 matched diagonal.
+    labels: list[str]
+    collision: list[float]
+    near_miss: list[float]
+
+    if FINAL_SUMMARY.exists():
+        by_name = {row["scenario"]: row for row in _read_rows(FINAL_SUMMARY)}
+        order = [
+            ("sensor", "sensor_only"),
+            ("lossy", "lossy_v2v"),
+            ("lossy_pdr03", "lossy_v2v\n(pdr=0.3)"),
+        ]
+        missing = [key for key, _ in order if key not in by_name]
+        if missing:
+            raise KeyError(f"missing scenarios in {FINAL_SUMMARY}: {missing}")
+        labels = [label for _, label in order]
+        collision = [float(by_name[key]["collision_rate"]) * 100.0 for key, _ in order]
+        near_miss = [float(by_name[key]["near_miss_rate"]) * 100.0 for key, _ in order]
+    else:
+        rows = _read_rows(COMPARE)
+        selected = [
+            row for row in rows
+            if (row["train_model"], row["eval_mode"]) in {
+                ("sensor_only", "sensor_only"),
+                ("lossy_v2v", "lossy_v2v"),
+            }
+        ]
+        # PDR 0.3 from sweep summary if available.
+        labels = [row["eval_mode"] for row in selected]
+        collision = [float(row["collision_rate"]) * 100.0 for row in selected]
+        near_miss = [float(row["near_miss_rate"]) * 100.0 for row in selected]
+        if SUMMARY.exists():
+            sweep = {float(r["pdr_scale"]): r for r in _read_rows(SUMMARY)}
+            if 0.3 in sweep:
+                labels.append("lossy_v2v\n(pdr=0.3)")
+                collision.append(float(sweep[0.3]["collision_rate"]) * 100.0)
+                near_miss.append(float(sweep[0.3]["near_miss_rate"]) * 100.0)
 
     x = list(range(len(labels)))
     width = 0.36
@@ -80,7 +108,7 @@ def grouped_safety_bar() -> None:
     plt.bar([i + width / 2 for i in x], near_miss, width, label="Near miss")
     plt.xticks(x, labels)
     plt.ylabel("Rate (%)")
-    plt.title("Stage 4 SUMO Safety Comparison")
+    plt.title("SUMO Safety Comparison")
     plt.ylim(0, max(max(collision), max(near_miss)) * 1.2 + 1)
     plt.grid(axis="y", linestyle="--", alpha=0.35)
     plt.legend()

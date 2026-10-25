@@ -16,7 +16,7 @@ Blind-intersection에서 **센서만으로는 충돌회피 정책 학습이 어�
 <p align="center"><em>Compare mode — sensor-only (left) vs lossy V2V (right), NLOS occlusion</em></p>
 
 <p align="center">
-  <img src="v2v_rebuild/presentation/sumo_stage4_safety_comparison.png" alt="SUMO Stage4 safety comparison" width="720" />
+  <img src="v2v_rebuild/presentation/sumo_stage4_safety_comparison.png" alt="SUMO safety comparison (sensor / lossy / lossy PDR 0.3)" width="720" />
 </p>
 
 <p align="center">
