@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 RUNS = Path("runs/sumo_weather_sensor_range_sweep.csv")
-OUT_DIR = Path("presentation")
+OUT_DIR = Path("presentation") / "archive"
 
 
 def main() -> None:

@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 RUNS_DIR = Path("runs")
 OUT_DIR = Path("presentation")
+ARCHIVE_DIR = OUT_DIR / "archive"
 SUMMARY = RUNS_DIR / "sumo_pdr_sweep_summary.csv"
 COMPARE = RUNS_DIR / "sumo_stage4_3x3_comparison.csv"
 # Canonical final metrics (preferred source for the README safety bar).
@@ -43,6 +44,8 @@ def line_plot(
     title: str,
     out_name: str,
     percent: bool = False,
+    *,
+    out_dir: Path | None = None,
 ) -> None:
     xs = [row["pdr_scale"] for row in data]
     ys = [row[y_key] * 100.0 if percent else row[y_key] for row in data]
@@ -55,7 +58,7 @@ def line_plot(
     plt.ylabel(ylabel)
     plt.title(title)
     plt.tight_layout()
-    path = OUT_DIR / out_name
+    path = (out_dir or OUT_DIR) / out_name
     plt.savefig(path, dpi=180)
     plt.close()
     print(f"saved: {path}")
@@ -113,7 +116,7 @@ def grouped_safety_bar() -> None:
     plt.grid(axis="y", linestyle="--", alpha=0.35)
     plt.legend()
     plt.tight_layout()
-    path = OUT_DIR / "sumo_stage4_safety_comparison.png"
+    path = OUT_DIR / "sumo_safety_comparison.png"
     plt.savefig(path, dpi=180)
     plt.close()
     print(f"saved: {path}")
@@ -121,19 +124,21 @@ def grouped_safety_bar() -> None:
 
 def main() -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
     if not SUMMARY.exists():
         raise FileNotFoundError(f"missing {SUMMARY}; run sweep_sumo_pdr.py first")
     data = collect_pdr_sweep()
-    out_summary = OUT_DIR / "sumo_pdr_sweep_summary.csv"
+    out_summary = ARCHIVE_DIR / "sumo_pdr_sweep_summary.csv"
     with open(out_summary, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(data[0].keys()))
         writer.writeheader()
         writer.writerows(data)
     print(f"saved: {out_summary}")
 
-    if COMPARE.exists():
+    if COMPARE.exists() or FINAL_SUMMARY.exists():
         grouped_safety_bar()
 
+    # Landing figure (README)
     line_plot(
         data,
         "collision_rate",
@@ -142,27 +147,19 @@ def main() -> None:
         "sumo_pdr_collision_rate.png",
         percent=True,
     )
+    # Extra plots → archive/ (not featured on the public README)
     line_plot(
-        data,
-        "near_miss_rate",
-        "Near miss rate (%)",
-        "SUMO Near Miss Rate vs PDR Scale",
-        "sumo_pdr_near_miss_rate.png",
-        percent=True,
+        data, "near_miss_rate", "Near miss rate (%)",
+        "SUMO Near Miss Rate vs PDR Scale", "sumo_pdr_near_miss_rate.png",
+        percent=True, out_dir=ARCHIVE_DIR,
     )
     line_plot(
-        data,
-        "mean_final_aoi",
-        "Mean final AoI (s)",
-        "SUMO AoI vs PDR Scale",
-        "sumo_pdr_aoi.png",
+        data, "mean_final_aoi", "Mean final AoI (s)",
+        "SUMO AoI vs PDR Scale", "sumo_pdr_aoi.png", out_dir=ARCHIVE_DIR,
     )
     line_plot(
-        data,
-        "mean_v2v_rx",
-        "Mean V2V messages / episode",
-        "SUMO V2V Reception vs PDR Scale",
-        "sumo_pdr_v2v_rx.png",
+        data, "mean_v2v_rx", "Mean V2V messages / episode",
+        "SUMO V2V Reception vs PDR Scale", "sumo_pdr_v2v_rx.png", out_dir=ARCHIVE_DIR,
     )
 
 

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 RUNS = Path("runs/sumo_multi_npc_comparison.csv")
-OUT_DIR = Path("presentation")
+OUT_DIR = Path("presentation") / "archive"
 
 
 def main() -> None:

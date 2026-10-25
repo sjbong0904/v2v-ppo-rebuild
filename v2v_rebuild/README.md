@@ -51,7 +51,7 @@ cd demo_package
 | `train_sumo_ppo.py` / `evaluate_sumo.py` | 학습·평가 |
 | `run_metric_eval.py` | 최종 지표 배치 평가 |
 | `demo_package/` | 독립 실행 Compare 데모 |
-| `presentation/` | 그래프 · `테스트지표2/` · `media/demo.gif` |
+| `presentation/` | 공개 그래프 · `테스트지표2/` · `media/demo.gif` (`archive/` = 부가 그림) |
 | `runs/` | 학습된 PPO zip · 실험 CSV |
 
 단계별 실험 서술·중간 결과는 [`EXPERIMENT_SUMMARY.md`](EXPERIMENT_SUMMARY.md)를 참고하세요.

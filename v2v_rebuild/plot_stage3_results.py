@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 RUNS_DIR = Path("runs")
-OUT_DIR = Path("presentation")
+OUT_DIR = Path("presentation") / "archive"
 
 PDR_FILES = {
     1.0: RUNS_DIR / "stage3_3x3_comparison.csv",
