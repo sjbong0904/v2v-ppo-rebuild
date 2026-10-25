@@ -1,6 +1,6 @@
 # V2V PPO Rebuild
 
-Blind-intersection에서 **센서만으로는 충돌회피 정책 학습이 어렵지만, V2V 조기 정보로 그 한계를 극복할 수 있다**는 것을 PPO ablation으로 검증한 졸업작품 재구성 저장소입니다.
+Blind-intersection에서 **센서만으로는 충돌회피 정책 학습이 어렵지만, V2V 조기 정보로 그 한계를 극복할 수 있다**는 것을 검증한 졸업작품 저장소입니다.
 
 메인 코드: [`v2v_rebuild/`](v2v_rebuild/)
 
