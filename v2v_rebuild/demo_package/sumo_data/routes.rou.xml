@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+
+    <vType id="ego_car"
+        accel="4.0" decel="8.0" emergencyDecel="9.0"
+        sigma="0.0" maxSpeed="16.0"
+        length="4.5" minGap="2.5" tau="1.0"
+        color="255,0,0,255" />
+
+    <vType id="target_car"
+        accel="3.0" decel="4.5" emergencyDecel="7.0"
+        sigma="0.0" maxSpeed="16.0"
+        length="4.5" minGap="2.0" tau="1.0"
+        color="0,0,255,255" />
+
+    <!-- Shoulder-parked truck: visual + additional sensor LOS occluder. -->
+    <vType id="obstacle_truck"
+        length="12.0" width="2.5" maxSpeed="0.1"
+        guiShape="truck" color="150,150,150" />
+
+    <route id="ego_SN" edges="S_in N_out" />
+    <route id="target_EW" edges="E_in W_out" />
+    <route id="npc_WE" edges="W_in E_out" />
+
+    <!-- East NLOS: parked beside S_in near the junction. -->
+    <vehicle id="parked_truck" type="obstacle_truck" route="ego_SN"
+             depart="0" departPos="180" departLane="0" departSpeed="0">
+        <stop lane="S_in_0" startPos="180" endPos="192" duration="99999" parking="true"/>
+    </vehicle>
+
+    <!-- West NLOS: parked beside W_in (east setup rotated 90° CW). -->
+    <vehicle id="parked_truck_w" type="obstacle_truck" route="npc_WE"
+             depart="0" departPos="180" departLane="0" departSpeed="0">
+        <stop lane="W_in_0" startPos="180" endPos="192" duration="99999" parking="true"/>
+    </vehicle>
+
+</routes>

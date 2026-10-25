@@ -1,0 +1,9 @@
+# All-in-one deps for the V2V demo GUI (models not included).
+# Includes eclipse-sumo (SUMO binaries) so a separate SUMO installer is optional.
+gymnasium==1.2.3
+numpy==1.26.4
+stable-baselines3==2.8.0
+eclipse-sumo>=1.25.0
+traci>=1.25.0
+sumolib>=1.25.0
+tkinterdnd2==0.4.3

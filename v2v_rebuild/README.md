@@ -3,6 +3,9 @@
 이 디렉토리는 기존 졸업작품 코드를 바로 폐기하지 않고, V2V 기반 PPO
 자율주행 문제를 작은 단위부터 다시 검증하기 위해 만든 재구성 작업공간이다.
 
+**한 줄 주장:** 교차로 blind-spot에서 센서만으로는 충돌회피 정책 학습이 어렵지만,
+V2V 조기 정보로 그 한계를 극복할 수 있다.
+
 기존 프로젝트는 SUMO, PPO, TTC, V2V feature, PDR, AoI, 교차로 판단 등이 한
 환경 안에 모두 들어가 있어 사고율이 높게 나왔을 때 원인을 분리하기 어려웠다.
 따라서 이 재구성 버전에서는 다음 순서로 문제를 다시 쌓는다.
@@ -11,6 +14,33 @@
 2. 센서-only 관측과 V2V 조기 관측을 비교한다.
 3. PDR, 메시지 손실, AoI를 추가해 lossy V2V 환경으로 확장한다.
 4. 검증된 관측/보상 구조를 SUMO로 이식하고, 센서 실패 모드·중간 다중 장면까지 확장한다.
+
+## 최종 지표 (canonical)
+
+발표/보고서용 최종 수치는 아래 폴더를 사용한다.
+
+- [`presentation/테스트지표2/`](presentation/테스트지표2/)
+- 요약: [`presentation/테스트지표2/FINAL_지표요약.md`](presentation/테스트지표2/FINAL_지표요약.md)
+
+| 시나리오 | Collision | Success | V2V early | 최초인지거리 | 최초인지 TTC |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| sensor | 39.0% | 61.0% | 0% | 17.0 m | 0.49 s |
+| multi_sensor | 54.0% | 46.0% | 0% | 16.0 m | 0.52 s |
+| lossy | 0.0% | 100% | 100% | 108.0 m | 6.07 s |
+| multi_lossy | 0.0% | 100% | 100% | 107.2 m | 5.88 s |
+| lossy_pdr03 | 0.5% | 99.5% | 100% | 96.8 m | 5.15 s |
+| multi_lossy_pdr03 | 4.0% | 96.0% | 100% | 96.0 m | 4.85 s |
+
+## Quickstart
+
+```powershell
+pip install -r requirements.txt
+python sumo_data/build_net.py   # 네트워크가 없을 때
+python evaluate_sumo.py --model runs/sumo_ppo_50k_lossy.zip --mode lossy_v2v --episodes 50
+python run_metric_eval.py --smoke 5   # 지표 로깅 스모크 테스트
+```
+
+GUI 데모: [`demo_package/README.md`](demo_package/README.md)
 
 ## 현재 단계
 
