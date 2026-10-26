@@ -21,9 +21,9 @@
 
 ---
 
-## 권장 메인 지표
+## 메인 지표
 
-1. collision rate (+ CI)
+1. collision rate
 2. successful passage rate
 3. first valid perception distance / TTC
 4. v2v_early_before_sensor rate
@@ -32,10 +32,3 @@
 
 ---
 
-## 참고 (해석 시)
-
-- `first_*_ttc`와 `first_brake_ttc`가 같고 latency=0인 것은  
-  **인지한 step에서 바로 제동**하는 패턴으로 해석 (거리·TTC 값 자체는 물리적으로 타당).
-- `conflict_gap`은 도착시간차 `|t_ego-t_target|`이며, 발표의 “여유시간”은 `*_ttc_s`를 사용.
-- near-miss: lossy 계열은 0~10.5%로, 예전 100% 고착 문제는 해소됨.
-- 우리쪽 `테스트지표_v2`와 multi_sensor 충돌률이 다름 → **최종은 본 폴더 기준**.
